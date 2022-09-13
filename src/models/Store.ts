@@ -104,9 +104,11 @@ const storeSchema = new mongoose.Schema({
   meta: {
     verified: {
       type: Boolean,
+      default: false,
     },
     closed: {
       type: Boolean,
+      default: false,
     },
   },
   address: {

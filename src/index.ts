@@ -1,6 +1,7 @@
-const express = require("express");
 const { createServer } = require("http");
 const { ApolloServer } = require("apollo-server-express");
+
+const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const helmet = require("helmet");
@@ -18,7 +19,7 @@ require("dotenv").config();
 const PORT: any = process.env.PORT || 5000;
 const DATABASE: string = process.env.MONGODB_CONNECTION_STRING;
 
-async function startApolloServer(typeDefs: any, resolvers: any) {
+export async function startApolloServer(typeDefs: any, resolvers: any) {
   const app = express();
   app.use(cors());
 

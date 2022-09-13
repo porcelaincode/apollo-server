@@ -47,18 +47,19 @@ module.exports = {
       { coordinates }: { coordinates: [string, string] },
       req
     ) {
-      const { loggedUser } = checkAuth(req);
+      // const { loggedUser } = checkAuth(req);
 
       const data = {
         store: {
-          id: "",
+          id: null,
           available: false,
         },
       };
+
       if (coordinates) {
         const geohash = Geohash.encode(
-          Number(coordinates[0]),
-          Number(coordinates[1]),
+          parseFloat(coordinates[0]),
+          parseFloat(coordinates[1]),
           9
         );
 

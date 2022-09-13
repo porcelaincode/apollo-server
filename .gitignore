@@ -68,6 +68,7 @@ env.list
 # data files
 data
 summary
+config.json
 
 # database files
 redis-*

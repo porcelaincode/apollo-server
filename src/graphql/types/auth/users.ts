@@ -10,7 +10,6 @@ module.exports = gql`
     token: String!
     refreshToken: String!
   }
-
   type ContactType {
     ISD: String
     number: String!
@@ -68,7 +67,7 @@ module.exports = gql`
   }
 
   type Query {
-    getFeed(coordinates: LocationInput): Feed!
+    getFeed(coordinates: [String]): Feed!
     getUser: User!
     twoFactorAuth(contact: ContactInput!, newAcc: Boolean!): Code
     checkAuth(contact: ContactInput!, secureCode: String!): AuthMsg
