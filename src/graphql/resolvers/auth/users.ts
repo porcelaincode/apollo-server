@@ -67,7 +67,7 @@ module.exports = {
 
         if (nearbyStores[0]) {
           const store = await Store.findById(nearbyStores[0]);
-          data.store.available = store.meta.closed;
+          data.store.available = !store.meta.closed;
           data.store.id = store.id;
         }
       }
@@ -87,8 +87,11 @@ module.exports = {
     },
     async twoFactorAuth(
       _: any,
-      { contact, newAcc }: { contact: ContactProps; newAcc: boolean }
+      { contact, newAcc }: { contact: ContactProps; newAcc: boolean },
+      req
     ) {
+      const { source } = checkAuth(req, true);
+
       if (contact.number.length !== 10) {
         return {
           date: null,
@@ -97,9 +100,17 @@ module.exports = {
         };
       }
 
-      const user = await User.findOne({
-        "contact.number": contact.number,
-      });
+      var user = null;
+
+      if (source.startsWith("locale-store")) {
+        user = await Store.findOne({
+          "contact.number": contact.number,
+        });
+      } else {
+        user = await User.findOne({
+          "contact.number": contact.number,
+        });
+      }
 
       if (user && newAcc) {
         return {
@@ -108,6 +119,8 @@ module.exports = {
           message: "Account with this contact number already exists.",
         };
       }
+
+      console.log(newAcc);
 
       if (user || newAcc) {
         await client.get(contact.number).then(async (res: any) => {
@@ -156,7 +169,7 @@ module.exports = {
           return {
             date: null,
             error: true,
-            message: "Error logging in! Try again in some time.",
+            message: "Error verifying! Try again.",
           };
         }
       }
@@ -279,9 +292,6 @@ module.exports = {
         });
       }
 
-      // hash the password and create auth token
-      // password = await bcrypt.hash(contact, 12);
-
       const newUser = new User({
         ...userInfoInput,
         meta: {
@@ -341,6 +351,7 @@ module.exports = {
       const { loggedUser } = checkAuth(req);
 
       let user_;
+
       if (id) {
         const geohash = Geohash.encode(
           Number(addressInfo.location.coordinates[0]),

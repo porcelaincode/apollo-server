@@ -7,6 +7,7 @@ import { withFilter } from "graphql-subscriptions";
 import { ContactProps, StoreInfoProps } from "../../../props";
 
 const Store = mongoose.model.Store || require("../../../models/Store");
+const Order = mongoose.model.Order || require("../../../models/Order");
 
 const checkAuth = require("../../../utils/checkAuth");
 const Geohash = require("../../../geohash");
@@ -20,13 +21,40 @@ const STORE_UPDATE = "STORE_UPDATE";
 
 module.exports = {
   Query: {
-    async getStore(_: any, { id }: { id: string }, req) {
+    async getStore(_: any, {}, req) {
       const { loggedUser, source } = checkAuth(req);
 
-      const store = await Store.findById(id);
+      const store = await Store.findById(loggedUser.id);
+
+      // process data
+      const td = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
+
+      const orders = await Order.find({
+        "meta.storeId": store._id,
+        "state.created.date": {
+          $gte: td,
+        },
+      });
+
+      var total = 0;
+      var count = 0;
+
+      orders.forEach((obj: any) => {
+        if (obj._doc.state.order.accepted) {
+          count = count + 1;
+          total = total + parseFloat(obj._doc.products.totalAmount);
+        }
+      });
+
+      const stat = {
+        amount: total.toFixed(2).toString(),
+        count: count,
+        error: false,
+        errorMessage: null,
+      };
 
       if (store) {
-        return store;
+        return { ...store._doc, id: store._id, stat };
       } else {
         throw new ValidationError("User not found");
       }
@@ -35,7 +63,7 @@ module.exports = {
   Mutation: {
     async editStore(
       _: any,
-      { id, storeInfo }: { id: string; storeInfo: StoreInfoProps },
+      { edit, storeInfo }: { edit: boolean; storeInfo: StoreInfoProps },
       req
     ) {
       const data = { ...storeInfo };
@@ -47,11 +75,11 @@ module.exports = {
       );
 
       try {
-        if (id) {
-          // const { loggedUser, source } = checkAuth(req);
+        if (edit) {
+          const { loggedUser, source } = checkAuth(req);
 
           const storeUpdate = await Store.updateOne(
-            { _id: bson.ObjectId(id) },
+            { _id: bson.ObjectId(loggedUser.id) },
             {
               $set: {
                 name: data.name,
@@ -68,7 +96,7 @@ module.exports = {
           );
 
           if (storeUpdate.modifiedCount) {
-            const res = await Store.findById(id);
+            const res = await Store.findById(loggedUser.id);
             pubsub.publish(STORE_UPDATE, {
               storeUpdate: {
                 ...res._doc,
@@ -82,7 +110,7 @@ module.exports = {
             };
           }
         } else {
-          // const { source } = checkAuth(req);
+          const { source } = checkAuth(req, true);
 
           const storeExists = await Store.findOne({
             "contact.number": data.contact.number,

@@ -1,10 +1,6 @@
 import { withFilter } from "graphql-subscriptions";
 import { CreateOrderProps, OrderProps } from "../../../props";
 
-const ORDER_UPDATE = "ORDER_UPDATE";
-const NEW_ORDER = "NEW_ORDER";
-const ACCOUNTS_UPDATE = "ACCOUNTS_UPDATE";
-
 const mongoose = require("mongoose");
 const bson = require("bson");
 
@@ -14,10 +10,15 @@ const Product = mongoose.model.Product || require("../../../models/Product");
 const Store = mongoose.model.Store || require("../../../models/Store");
 
 const checkAuth = require("../../../utils/checkAuth");
+
 const { pubsub } = require("../../../redis");
 
 const { asyncForEach } = require("../../../utils/generalUtil");
 const { calcCrow } = require("../../../brain");
+
+const ORDER_UPDATE = "ORDER_UPDATE";
+const NEW_ORDER = "NEW_ORDER";
+const ACCOUNTS_UPDATE = "ACCOUNTS_UPDATE";
 
 import { StoreLocationProps } from "../../../props";
 

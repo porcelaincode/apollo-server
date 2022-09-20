@@ -4,12 +4,19 @@ module.exports = gql`
   type Store {
     id: ID!
     name: String
+    stat: StoreStat
     contact: ContactType!
     meta: StoreMeta
     address: StoreAddress
     accounts: [StoreAccounts]
     token: String
     refreshToken: String
+  }
+  type StoreStat {
+    amount: String
+    count: Int
+    error: Boolean
+    errorMessage: String
   }
   type StoreAccounts {
     id: String
@@ -52,7 +59,7 @@ module.exports = gql`
     getStore: Store!
   }
   type Mutation {
-    editStore(id: String, storeInfo: StoreInfo): Store!
+    editStore(edit: Boolean!, storeInfo: StoreInfo): Store!
   }
   type Subscription {
     storeUpdate(id: String!): Store!

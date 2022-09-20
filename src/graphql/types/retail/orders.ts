@@ -8,7 +8,6 @@ module.exports = gql`
     linkedAccount: String
     state: OrderStateType
   }
-
   type OrderStateType {
     order: OrderCancelledType
     created: OrderCreatedType
@@ -23,7 +22,6 @@ module.exports = gql`
     accepted: Boolean
     date: String
   }
-
   type OrderDeliveryType {
     toDeliver: Boolean!
     address: OrderDeliveryAddress
@@ -40,12 +38,10 @@ module.exports = gql`
     grandAmount: String!
     paidAt: String
   }
-
   type OrderMetaType {
     userId: String!
     storeId: String!
   }
-
   type OrderProduct {
     brand: String
     name: String!
@@ -58,7 +54,6 @@ module.exports = gql`
     mrp: String!
     discount: String
   }
-
   input OrderInputProduct {
     id: String!
     quantity: Int!
@@ -72,7 +67,6 @@ module.exports = gql`
     deliverBy: String
     addToAccount: Boolean!
   }
-
   type Query {
     getOrder(id: String!): Order!
     getOrders: [Order]!
