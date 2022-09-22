@@ -38,9 +38,13 @@ module.exports = {
 
       let orders: Array<OrderProps>;
       if (source.startsWith("locale-store")) {
-        orders = await Order.find({ "meta.storeId": loggedUser.id });
+        orders = await Order.find({ "meta.storeId": loggedUser.id }).sort({
+          date: -1,
+        });
       } else if (source.startsWith("locale-user")) {
-        orders = await Order.find({ "meta.userId": loggedUser.id });
+        orders = await Order.find({ "meta.userId": loggedUser.id }).sort({
+          date: -1,
+        });
       } else {
         throw new AuthenticationError("Request not verified");
       }
@@ -157,8 +161,6 @@ module.exports = {
           address = u.deliveryAddresses.find(
             (e) => e.id.toString() === data.addressId
           );
-
-          console.log(address);
         }
 
         const newOrder = new Order({
