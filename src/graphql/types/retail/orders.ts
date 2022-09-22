@@ -50,6 +50,12 @@ module.exports = gql`
     quantity: Int!
     totalAmount: String
   }
+  type DeliveryTimes {
+    type: String
+    text: String
+    n: String
+    active: Boolean
+  }
   type PriceType {
     mrp: String!
     discount: String
@@ -70,6 +76,7 @@ module.exports = gql`
   type Query {
     getOrder(id: String!): Order!
     getOrders: [Order]!
+    getDeliveryTimes: [DeliveryTimes]
   }
   type Mutation {
     createOrder(orderInfo: OrderInfo): Order!

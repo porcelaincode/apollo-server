@@ -47,6 +47,43 @@ module.exports = {
 
       return orders;
     },
+
+    async getDeliveryTimes(_: any, {}, req: any) {
+      const { loggedUser } = checkAuth(req);
+
+      if (!loggedUser) {
+        throw new Error("Error Occured");
+      }
+
+      const deliveryTimes = [
+        {
+          type: "10 min",
+          text: "Order will be dispatched from store nearest to you within 10 mins. Approx. time: ",
+          n: "600000",
+          active: true,
+        },
+        {
+          type: "1 hr",
+          text: "Order will be dispatched from store nearest to you within an hour. Approx. time: ",
+          n: "3600000",
+          active: true,
+        },
+        {
+          type: "1-2 hr",
+          text: "Order will be dispatched from store nearest to you within a couple of hours. Approx. time: ",
+          n: "7200000",
+          active: true,
+        },
+        {
+          type: "6 hr",
+          text: "Order will be dispatched from store nearest to you within 6 hours. Approx. time: ",
+          n: "21600000",
+          active: true,
+        },
+      ];
+
+      return deliveryTimes;
+    },
   },
   Mutation: {
     async createOrder(
@@ -118,8 +155,10 @@ module.exports = {
           const u = await User.findById(loggedUser.id);
 
           address = u.deliveryAddresses.find(
-            (e) => e._id.toString() === data.addressId
+            (e) => e.id.toString() === data.addressId
           );
+
+          console.log(address);
         }
 
         const newOrder = new Order({
@@ -141,7 +180,10 @@ module.exports = {
                     location: address.location,
                   }
                 : null,
-              deliverBy: data.deliverBy || null,
+              deliverBy:
+                new Date(
+                  Date.now() + parseFloat(data.deliverBy)
+                ).toISOString() || null,
             },
             payment: {
               paid: false,

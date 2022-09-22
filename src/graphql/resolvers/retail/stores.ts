@@ -59,6 +59,40 @@ module.exports = {
         throw new ValidationError("User not found");
       }
     },
+    async getConfirmation(_: any, { storeId }: { storeId: string }, req) {
+      const { loggedUser, source } = checkAuth(req);
+
+      var data = {
+        name: "",
+        status: {
+          closed: true,
+        },
+        account: {
+          exists: false,
+          amount: "0.00",
+          closed: false,
+          date: new Date().toISOString(),
+        },
+      };
+
+      const store = await Store.findById(storeId);
+
+      data.name = store._doc.name;
+      data.status.closed = store._doc.meta.closed;
+
+      const account = store._doc.accounts.find(
+        (account: any) => account.id === loggedUser.id
+      );
+
+      if (account) {
+        data.account.exists = true;
+        data.account.amount = account.pending.amount;
+        data.account.closed = account.closed;
+        data.account.date = account.lastUpdated;
+      }
+
+      return data;
+    },
   },
   Mutation: {
     async editStore(

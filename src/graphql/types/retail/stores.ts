@@ -45,6 +45,21 @@ module.exports = gql`
     line: String
     location: PointType
   }
+  type ConfirmType {
+    name: String!
+    status: ConfirmStatus
+    account: ConfirmAccount
+  }
+  type ConfirmStatus {
+    closed: Boolean!
+  }
+  type ConfirmAccount {
+    exists: Boolean
+    closed: Boolean
+    amount: String
+    date: String
+  }
+
   input StoreAddressInput {
     line1: String
     location: LocationInput
@@ -57,6 +72,7 @@ module.exports = gql`
 
   type Query {
     getStore: Store!
+    getConfirmation(storeId: String!): ConfirmType
   }
   type Mutation {
     editStore(edit: Boolean!, storeInfo: StoreInfo): Store!
