@@ -4,14 +4,15 @@ const bson = require("bson");
 import { UserInputError, ValidationError } from "apollo-server-express";
 import { withFilter } from "graphql-subscriptions";
 
-import { ContactProps, StoreInfoProps } from "../../../props";
+import { StoreInfoProps } from "../../../props";
 
 const Store = mongoose.model.Store || require("../../../models/Store");
 const Order = mongoose.model.Order || require("../../../models/Order");
 
 const checkAuth = require("../../../utils/checkAuth");
 const Geohash = require("../../../geohash");
-const { pubsub } = require("../../../redis");
+const pubsub = require("../../../pubsub");
+
 const {
   generateToken,
   generateRefreshToken,
@@ -196,7 +197,7 @@ module.exports = {
       }
     },
   },
-  Subscription: {
+  Subscriptions: {
     storeUpdate: {
       subscribe: withFilter(
         () => pubsub.asyncIterator([STORE_UPDATE]),

@@ -8,7 +8,7 @@ module.exports = gql`
     contact: ContactType!
     meta: StoreMeta
     address: StoreAddress
-    accounts: [StoreAccounts]
+    accounts: [StoreAccount]
     token: String
     refreshToken: String
   }
@@ -18,7 +18,7 @@ module.exports = gql`
     error: Boolean
     errorMessage: String
   }
-  type StoreAccounts {
+  type StoreAccount {
     id: String
     name: String
     lastUpdated: String
@@ -79,5 +79,6 @@ module.exports = gql`
   }
   type Subscription {
     storeUpdate(id: String!): Store!
+    accountUpdate(contact: ContactInput, storeId: String!): StoreAccount
   }
 `;

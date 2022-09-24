@@ -31,7 +31,8 @@ const {
 } = require("../../../utils/generalUtil");
 const { findNearbyStores } = require("../../../brain");
 const { twclient } = require("../../../twilio");
-const { client, pubsub } = require("../../../redis");
+const { client } = require("../../../redis");
+const pubsub = require("../../../pubsub");
 
 require("dotenv").config();
 

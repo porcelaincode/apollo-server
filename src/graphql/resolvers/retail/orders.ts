@@ -1,5 +1,5 @@
 import { withFilter } from "graphql-subscriptions";
-import { CreateOrderProps, OrderProps } from "../../../props";
+import { ContactProps, CreateOrderProps, OrderProps } from "../../../props";
 
 const mongoose = require("mongoose");
 const bson = require("bson");
@@ -11,14 +11,13 @@ const Store = mongoose.model.Store || require("../../../models/Store");
 
 const checkAuth = require("../../../utils/checkAuth");
 
-const { pubsub } = require("../../../redis");
-
 const { asyncForEach } = require("../../../utils/generalUtil");
 const { calcCrow } = require("../../../brain");
+const pubsub = require("../../../pubsub");
 
 const ORDER_UPDATE = "ORDER_UPDATE";
 const NEW_ORDER = "NEW_ORDER";
-const ACCOUNTS_UPDATE = "ACCOUNTS_UPDATE";
+const ACCOUNT_UPDATE = "ACCOUNTS_UPDATE";
 
 import { StoreLocationProps } from "../../../props";
 
@@ -37,13 +36,14 @@ module.exports = {
       const { loggedUser, source } = checkAuth(req);
 
       let orders: Array<OrderProps>;
+
       if (source.startsWith("locale-store")) {
         orders = await Order.find({ "meta.storeId": loggedUser.id }).sort({
-          date: -1,
+          "state.created.date": -1,
         });
       } else if (source.startsWith("locale-user")) {
         orders = await Order.find({ "meta.userId": loggedUser.id }).sort({
-          date: -1,
+          "state.created.date": -1,
         });
       } else {
         throw new AuthenticationError("Request not verified");
@@ -51,7 +51,6 @@ module.exports = {
 
       return orders;
     },
-
     async getDeliveryTimes(_: any, {}, req: any) {
       const { loggedUser } = checkAuth(req);
 
@@ -312,7 +311,7 @@ module.exports = {
                 (e) => e.id === res.linkedAccount
               );
 
-              pubsub.publish(ACCOUNTS_UPDATE, {
+              pubsub.publish(ACCOUNT_UPDATE, {
                 accountsUpdate: {
                   store: {
                     id: updatedStore._id,
@@ -402,12 +401,27 @@ module.exports = {
       }
     },
   },
-  Subscription: {
+  Subscriptions: {
     orderUpdate: {
       subscribe: withFilter(
         () => pubsub.asyncIterator([ORDER_UPDATE]),
         (payload: any, variables: any) => {
           return payload.id === variables.id;
+        }
+      ),
+    },
+    accountUpdate: {
+      subscribe: withFilter(
+        () => pubsub.asyncIterator([ACCOUNT_UPDATE]),
+        (
+          payload: { accountUpdate: any },
+          variables: { contact: ContactProps; storeId: string }
+        ) => {
+          return (
+            payload.accountUpdate.data.contact.number ===
+              variables.contact.number ||
+            payload.accountUpdate.store.id === variables.storeId
+          );
         }
       ),
     },
