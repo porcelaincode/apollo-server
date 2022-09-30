@@ -27,6 +27,7 @@ function generateToken(user: UserProps) {
   return jwt.sign(
     {
       id: user.id,
+      name: user.name,
       contact: user.contact,
     },
     process.env.TOKEN_SECRET,

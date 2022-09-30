@@ -232,7 +232,7 @@ module.exports = {
           }
         );
 
-        const res = await Order.findById(loggedUser.id);
+        const res = await Order.findById(id);
 
         if (accepted && res.linkedAccount) {
           const store = await Store.findById(loggedUser.id);

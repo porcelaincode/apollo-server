@@ -121,8 +121,6 @@ module.exports = {
         };
       }
 
-      console.log(newAcc);
-
       if (user || newAcc) {
         await client.get(contact.number).then(async (res: any) => {
           if (res) {
