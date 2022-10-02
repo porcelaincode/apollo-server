@@ -27,6 +27,8 @@ module.exports = {
 
       const store = await Store.findById(loggedUser.id);
 
+      console.log(`Store ${loggedUser.id} requesting details.`);
+
       // process data
       const td = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
 
@@ -41,9 +43,9 @@ module.exports = {
       var count = 0;
 
       orders.forEach((obj: any) => {
-        if (obj._doc.state.order.accepted) {
+        if (obj.state.order.accepted) {
           count = count + 1;
-          total = total + parseFloat(obj._doc.products.totalAmount);
+          total = total + parseFloat(obj.state.payment.grandAmount);
         }
       });
 
@@ -54,6 +56,8 @@ module.exports = {
         errorMessage: null,
       };
 
+      console.log(stat);
+
       if (store) {
         return { ...store._doc, id: store._id, stat };
       } else {
@@ -62,6 +66,8 @@ module.exports = {
     },
     async getConfirmation(_: any, { storeId }: { storeId: string }, req) {
       const { loggedUser, source } = checkAuth(req);
+
+      console.log(`User ${loggedUser.id} requesting confirmation for order.`);
 
       var data = {
         name: "",
@@ -101,7 +107,11 @@ module.exports = {
       { edit, storeInfo }: { edit: boolean; storeInfo: StoreInfoProps },
       req
     ) {
+      const { loggedUser } = checkAuth(req);
+
       const data = { ...storeInfo };
+
+      console.log(`Store ${loggedUser.id} changing details.`);
 
       const geohash = Geohash.encode(
         Number(data.address.location.coordinates[0]),

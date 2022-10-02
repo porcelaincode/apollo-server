@@ -48,7 +48,9 @@ module.exports = {
       { coordinates }: { coordinates: [string, string] },
       req
     ) {
-      // const { loggedUser } = checkAuth(req);
+      const { loggedUser } = checkAuth(req);
+
+      console.log(`User ${loggedUser.id} requesting fresh feed`);
 
       const data = {
         store: {
@@ -349,6 +351,10 @@ module.exports = {
     ) {
       const { loggedUser } = checkAuth(req);
 
+      console.log(
+        `User ${loggedUser.id} requesting to ${id ? "update" : "edit"} address.`
+      );
+
       let user_;
 
       if (id) {
@@ -449,6 +455,8 @@ module.exports = {
       req: any
     ) {
       const { loggedUser } = checkAuth(req);
+
+      console.log(`User ${loggedUser.id} requesting to update their profile`);
 
       const user_ = await User.updateOne(
         { _id: loggedUser.id },

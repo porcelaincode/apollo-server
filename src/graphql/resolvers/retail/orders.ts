@@ -25,6 +25,9 @@ module.exports = {
   Query: {
     async getOrder(_: any, { id }: { id: string }, req) {
       const { loggedUser, source } = checkAuth(req);
+
+      console.log(`Order ${id} requested.`);
+
       const order = await Order.findById(id);
       if (order) {
         return order;
@@ -38,10 +41,12 @@ module.exports = {
       let orders: Array<OrderProps>;
 
       if (source.startsWith("locale-store")) {
+        console.log(`Store ${loggedUser.id} requesting all orders.`);
         orders = await Order.find({ "meta.storeId": loggedUser.id }).sort({
           "state.created.date": -1,
         });
       } else if (source.startsWith("locale-user")) {
+        console.log(`User ${loggedUser.id} requesting all orders.`);
         orders = await Order.find({ "meta.userId": loggedUser.id }).sort({
           "state.created.date": -1,
         });
@@ -99,6 +104,8 @@ module.exports = {
       const data = { ...orderInfo };
 
       if (source.startsWith("locale-store")) {
+        console.log(`Store ${loggedUser.id} requesting to register an order.`);
+
         const newOrder = new Order({
           ...data,
           state: {
@@ -111,7 +118,7 @@ module.exports = {
         const res = await newOrder.save();
 
         pubsub.publish(ORDER_UPDATE, {
-          userUpdate: {
+          orderUpdate: {
             ...res._doc,
             id: res._id,
           },
@@ -122,6 +129,8 @@ module.exports = {
           id: res._id,
         };
       } else if (source.startsWith("locale-user")) {
+        console.log(`User ${loggedUser.id} requesting to register an order.`);
+
         const userId = loggedUser.id;
         const products = [];
 
@@ -196,7 +205,7 @@ module.exports = {
         const res = await newOrder.save();
 
         pubsub.publish(ORDER_UPDATE, {
-          userUpdate: {
+          orderUpdate: {
             ...res._doc,
             id: res._id,
           },
@@ -222,6 +231,8 @@ module.exports = {
       const { loggedUser, source } = checkAuth(req);
 
       if (source.startsWith("locale-store")) {
+        console.log(`Store ${loggedUser.id} requesting to accept order ${id}`);
+
         const order_ = await Order.updateOne(
           { _id: bson.ObjectId(id) },
           {
@@ -328,7 +339,7 @@ module.exports = {
         }
 
         pubsub.publish(ORDER_UPDATE, {
-          userUpdate: {
+          orderUpdate: {
             ...res._doc,
             id: res._id,
           },
@@ -406,7 +417,12 @@ module.exports = {
       subscribe: withFilter(
         () => pubsub.asyncIterator([ORDER_UPDATE]),
         (payload: any, variables: any) => {
-          return payload.id === variables.id;
+          console.log(payload);
+          console.log(variables);
+          return (
+            payload.orderUpdate.meta.storeId === variables.id ||
+            payload.orderUpdate.meta.userId === variables.id
+          );
         }
       ),
     },
