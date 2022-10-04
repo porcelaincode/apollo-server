@@ -56,8 +56,6 @@ module.exports = {
         errorMessage: null,
       };
 
-      console.log(stat);
-
       if (store) {
         return { ...store._doc, id: store._id, stat };
       } else {

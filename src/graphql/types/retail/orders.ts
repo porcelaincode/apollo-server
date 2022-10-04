@@ -9,16 +9,17 @@ module.exports = gql`
     state: OrderStateType
   }
   type OrderStateType {
+    message: String
     order: OrderCancelledType
     created: OrderCreatedType
     delivery: OrderDeliveryType
     payment: OrderPaymentType
-    cancelled: Boolean
   }
   type OrderCreatedType {
     date: String
   }
   type OrderCancelledType {
+    cancelled: Boolean
     accepted: Boolean
     date: String
   }
@@ -75,12 +76,17 @@ module.exports = gql`
   }
   type Query {
     getOrder(id: String!): Order!
-    getOrders: [Order]!
+    getOrders(limit: Int!, offset: Int!): [Order]!
     getDeliveryTimes: [DeliveryTimes]
   }
   type Mutation {
     createOrder(orderInfo: OrderInfo): Order!
-    acceptOrder(id: String!, accepted: Boolean!, products: [String]): Boolean!
+    alterOrderState(
+      id: String!
+      accepted: Boolean
+      cancel: Boolean
+      products: [String]
+    ): Boolean!
     deliveredOrder(id: String!, coordinates: [String]!): Boolean
   }
   type Subscription {

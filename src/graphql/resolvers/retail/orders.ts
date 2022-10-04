@@ -12,11 +12,12 @@ const Store = mongoose.model.Store || require("../../../models/Store");
 const checkAuth = require("../../../utils/checkAuth");
 
 const { asyncForEach } = require("../../../utils/generalUtil");
+const { findNearbyStores } = require("../../../brain");
 const { calcCrow } = require("../../../brain");
 const pubsub = require("../../../pubsub");
+const Geohash = require("../../../geohash");
 
 const ORDER_UPDATE = "ORDER_UPDATE";
-const NEW_ORDER = "NEW_ORDER";
 const ACCOUNT_UPDATE = "ACCOUNTS_UPDATE";
 
 import { StoreLocationProps } from "../../../props";
@@ -29,27 +30,39 @@ module.exports = {
       console.log(`Order ${id} requested.`);
 
       const order = await Order.findById(id);
+
       if (order) {
         return order;
       } else {
         throw new Error("User not found");
       }
     },
-    async getOrders(_: any, {}, req) {
+    async getOrders(
+      _: any,
+      { limit, offset }: { limit: number; offset: number },
+      req
+    ) {
       const { loggedUser, source } = checkAuth(req);
 
       let orders: Array<OrderProps>;
 
       if (source.startsWith("locale-store")) {
         console.log(`Store ${loggedUser.id} requesting all orders.`);
-        orders = await Order.find({ "meta.storeId": loggedUser.id }).sort({
-          "state.created.date": -1,
-        });
+        orders = await Order.find({
+          "meta.storeId": loggedUser.id,
+          "state.order.cancelled": false,
+        })
+          .limit(limit)
+          .sort({
+            "state.created.date": -1,
+          });
       } else if (source.startsWith("locale-user")) {
         console.log(`User ${loggedUser.id} requesting all orders.`);
-        orders = await Order.find({ "meta.userId": loggedUser.id }).sort({
-          "state.created.date": -1,
-        });
+        orders = await Order.find({ "meta.userId": loggedUser.id })
+          .limit(limit)
+          .sort({
+            "state.created.date": -1,
+          });
       } else {
         throw new AuthenticationError("Request not verified");
       }
@@ -219,124 +232,230 @@ module.exports = {
         AuthenticationError("Request not verified.");
       }
     },
-    async acceptOrder(
+    async alterOrderState(
       _: any,
       {
         id,
         accepted,
+        cancel,
         products,
-      }: { id: string; accepted: boolean; products: Array<string> },
+      }: {
+        id: string;
+        accepted: boolean;
+        cancel: boolean;
+        products: Array<string>;
+      },
       req
     ) {
       const { loggedUser, source } = checkAuth(req);
 
       if (source.startsWith("locale-store")) {
-        console.log(`Store ${loggedUser.id} requesting to accept order ${id}`);
+        if (accepted) {
+          console.log(
+            `Store ${loggedUser.id} requesting to accept order ${id}`
+          );
+
+          const order_ = await Order.updateOne(
+            { _id: bson.ObjectId(id) },
+            {
+              $set: {
+                "state.order.accepted": accepted,
+                "state.order.date": new Date().toISOString(),
+              },
+            }
+          );
+
+          const res = await Order.findById(id);
+
+          if (accepted && res.linkedAccount) {
+            const store = await Store.findById(loggedUser.id);
+            const accounts = [...store.accounts];
+
+            const account = accounts.find((e) => e.id === res.linkedAccount);
+
+            if (account) {
+              const orders = [...account.orders].concat({
+                orderId: res._id.toString(),
+                paid: res.state.payment.paid,
+                amount: res.state.payment.grandAmount,
+              });
+
+              const i = orders.findIndex((e) => e.paid === false);
+
+              const updatedAccount = {
+                ...account,
+                lastUpdated: new Date().toISOString(),
+                orders,
+                closed: i <= -1 ? true : false,
+                pending: {
+                  status: i <= -1 ? false : true,
+                  amount: (
+                    parseFloat(account.pending.amount) +
+                    parseFloat(res._doc.status.payment.grandAmount)
+                  ).toString(),
+                },
+              };
+
+              const j = accounts.findIndex((e) => e.id === res.linkedAccount);
+
+              accounts.splice(j, 1);
+
+              const updatedRunningAccounts = [updatedAccount].concat(accounts);
+
+              const updatingRunningAccount = await Store.updateOne(
+                { _id: bson.ObjectId(loggedUser.id) },
+                {
+                  $set: {
+                    accounts: updatedRunningAccounts,
+                  },
+                }
+              );
+            } else {
+              const user = await User.findById(res.linkedAccount);
+
+              const newAccount = {
+                id: res._doc.linkedAccount,
+                name: user.name,
+                lastUpdated: new Date().toISOString(),
+                closed: res._doc.state.payment.paid,
+                orders: [
+                  {
+                    orderId: res._id.toString(),
+                    paid: res._doc.state.payment.paid,
+                    amount: res._doc.state.payment.grandAmount,
+                  },
+                ],
+              };
+              const updatingStore = await Store.updateOne(
+                { _id: bson.ObjectId(loggedUser.id) },
+                {
+                  $push: {
+                    accounts: newAccount,
+                  },
+                }
+              );
+
+              if (updatingStore.modifiedCount) {
+                const updatedStore = await Store.findById(loggedUser.id);
+
+                var updatedaccounts = [...updatedStore.accounts];
+
+                const userAccount = updatedaccounts?.find(
+                  (e) => e.id === res.linkedAccount
+                );
+
+                pubsub.publish(ACCOUNT_UPDATE, {
+                  accountsUpdate: {
+                    store: {
+                      id: updatedStore._id,
+                      name: updatedStore._doc.name,
+                    },
+                    data: {
+                      ...userAccount,
+                      id: userAccount._id,
+                    },
+                  },
+                });
+              }
+            }
+          }
+          pubsub.publish(ORDER_UPDATE, {
+            orderUpdate: {
+              ...res._doc,
+              id: res._id,
+            },
+          });
+
+          return order_.modifiedCount ? true : false;
+        } else {
+          console.log(`Store ${loggedUser.id} rejected order ${id}`);
+          const res = await Order.findById(id);
+
+          const prevStore = res.meta.storeId;
+          const geohash = res.state.delivery.address.location.hash;
+
+          const nearbyStores: Array<any> = await findNearbyStores(geohash);
+
+          nearbyStores.filter((store) => store.id !== prevStore.id);
+
+          console.log(nearbyStores);
+
+          if (nearbyStores[0]) {
+            const order_ = await Order.updateOne(
+              { _id: bson.ObjectId(id) },
+              {
+                $set: {
+                  "meta.storeId": nearbyStores[0].id,
+                },
+              }
+            );
+
+            if (order_.modifiedCount) {
+              pubsub.publish(ORDER_UPDATE, {
+                orderUpdate: {
+                  ...res._doc,
+                  id: res._id,
+                  "meta.storeId": nearbyStores[0].id,
+                },
+              });
+
+              return true;
+            } else {
+              return false;
+            }
+          } else {
+            const order_ = await Order.updateOne(
+              { _id: bson.ObjectId(id) },
+              {
+                $set: {
+                  "state.order.cancelled": true,
+                  "state.order.accepted": false,
+                  "state.message":
+                    "Nearby store(s) did not accept your order. We're getting working on it.",
+                  "state.order.date": new Date().toISOString(),
+                },
+              }
+            );
+
+            if (order_.modifiedCount) {
+              pubsub.publish(ORDER_UPDATE, {
+                orderUpdate: {
+                  ...res._doc,
+                  id: res._id,
+                  state: {
+                    ...res._doc.state,
+                    order: {
+                      cancelled: true,
+                      accepted: false,
+                      date: new Date().toISOString(),
+                    },
+                    message:
+                      "Nearby store(s) did not accept your order. We're getting working on it.",
+                  },
+                },
+              });
+
+              return true;
+            } else {
+              return false;
+            }
+          }
+        }
+      } else if (source.startsWith("locale-user")) {
+        console.log(`User ${loggedUser.id} requesting to cancel order ${id}`);
 
         const order_ = await Order.updateOne(
           { _id: bson.ObjectId(id) },
           {
             $set: {
-              "state.order.accepted": accepted,
+              "state.order.cancelled": cancel,
+              "state.message": "Order cancelled by user.",
               "state.order.date": new Date().toISOString(),
             },
           }
         );
 
         const res = await Order.findById(id);
-
-        if (accepted && res.linkedAccount) {
-          const store = await Store.findById(loggedUser.id);
-          const accounts = [...store.accounts];
-
-          const account = accounts.find((e) => e.id === res.linkedAccount);
-
-          if (account) {
-            const orders = [...account.orders].concat({
-              orderId: res._id.toString(),
-              paid: res.state.payment.paid,
-              amount: res.state.payment.grandAmount,
-            });
-
-            const i = orders.findIndex((e) => e.paid === false);
-
-            const updatedAccount = {
-              ...account,
-              lastUpdated: new Date().toISOString(),
-              orders,
-              closed: i <= -1 ? true : false,
-              pending: {
-                status: i <= -1 ? false : true,
-                amount: (
-                  parseFloat(account.pending.amount) +
-                  parseFloat(res._doc.status.payment.grandAmount)
-                ).toString(),
-              },
-            };
-
-            const j = accounts.findIndex((e) => e.id === res.linkedAccount);
-
-            accounts.splice(j, 1);
-
-            const updatedRunningAccounts = [updatedAccount].concat(accounts);
-
-            const updatingRunningAccount = await Store.updateOne(
-              { _id: bson.ObjectId(loggedUser.id) },
-              {
-                $set: {
-                  accounts: updatedRunningAccounts,
-                },
-              }
-            );
-          } else {
-            const user = await User.findById(res.linkedAccount);
-
-            const newAccount = {
-              id: res._doc.linkedAccount,
-              name: user.name,
-              lastUpdated: new Date().toISOString(),
-              closed: res._doc.state.payment.paid,
-              orders: [
-                {
-                  orderId: res._id.toString(),
-                  paid: res._doc.state.payment.paid,
-                  amount: res._doc.state.payment.grandAmount,
-                },
-              ],
-            };
-            const updatingStore = await Store.updateOne(
-              { _id: bson.ObjectId(loggedUser.id) },
-              {
-                $push: {
-                  accounts: newAccount,
-                },
-              }
-            );
-
-            if (updatingStore.modifiedCount) {
-              const updatedStore = await Store.findById(loggedUser.id);
-
-              var updatedaccounts = [...updatedStore.accounts];
-
-              const userAccount = updatedaccounts?.find(
-                (e) => e.id === res.linkedAccount
-              );
-
-              pubsub.publish(ACCOUNT_UPDATE, {
-                accountsUpdate: {
-                  store: {
-                    id: updatedStore._id,
-                    name: updatedStore._doc.name,
-                  },
-                  data: {
-                    ...userAccount,
-                    id: userAccount._id,
-                  },
-                },
-              });
-            }
-          }
-        }
 
         pubsub.publish(ORDER_UPDATE, {
           orderUpdate: {
@@ -392,14 +511,17 @@ module.exports = {
           }
         );
 
-        pubsub.publish(NEW_ORDER, {
-          newOrder: {
+        pubsub.publish(ORDER_UPDATE, {
+          orderUpdate: {
             ...orderToUpdate._doc,
             id: orderToUpdate._id,
-            delivery: {
-              ...orderToUpdate._doc.delivery,
-              isDelivered: true,
-              deliveryDate: deliveryDate,
+            state: {
+              ...orderToUpdate._doc.state,
+              delivery: {
+                ...orderToUpdate._doc.state.delivery,
+                delivered: true,
+                deliveredAt: deliveryDate,
+              },
             },
           },
         });
@@ -417,8 +539,6 @@ module.exports = {
       subscribe: withFilter(
         () => pubsub.asyncIterator([ORDER_UPDATE]),
         (payload: any, variables: any) => {
-          console.log(payload);
-          console.log(variables);
           return (
             payload.orderUpdate.meta.storeId === variables.id ||
             payload.orderUpdate.meta.userId === variables.id

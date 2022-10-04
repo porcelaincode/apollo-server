@@ -72,7 +72,15 @@ const orderSchema = new mongoose.Schema({
         required: true,
       },
     },
+    message: {
+      type: String,
+      default: "Order processing",
+    },
     order: {
+      cancelled: {
+        type: Boolean,
+        default: false,
+      },
       accepted: {
         type: Boolean,
         default: false,
