@@ -60,6 +60,14 @@ const orderSchema = new mongoose.Schema({
       type: String,
       required: true,
     },
+    rating: {
+      type: String,
+      required: false,
+    },
+    timeTaken: {
+      type: String,
+      required: false,
+    },
   },
   products: [orderProductSchema],
   linkedAccount: {
@@ -110,6 +118,13 @@ const orderSchema = new mongoose.Schema({
         default: false,
       },
       deliveredAt: {
+        type: String,
+      },
+      dispatched: {
+        type: Boolean,
+        default: false,
+      },
+      dispatchedAt: {
         type: String,
       },
     },

@@ -29,6 +29,8 @@ module.exports = gql`
     deliverBy: String
     delivered: Boolean
     deliveredAt: String
+    dispatched: Boolean
+    dispatchedAt: String
   }
   type OrderDeliveryAddress {
     line: String
@@ -87,7 +89,11 @@ module.exports = gql`
       cancel: Boolean
       products: [String]
     ): Boolean!
-    deliveredOrder(id: String!, coordinates: [String]!): Boolean
+    alterDeliveryState(
+      id: String!
+      coordinates: [String]!
+      dispatched: Boolean
+    ): Boolean!
   }
   type Subscription {
     orderUpdate(id: String!): Order!

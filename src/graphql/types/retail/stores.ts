@@ -79,6 +79,7 @@ module.exports = gql`
   }
   type Subscription {
     storeUpdate(id: String!): Store!
+    inventoryUpdate(id: String!): Inventory!
     accountUpdate(contact: ContactInput, storeId: String!): StoreAccount
   }
 `;

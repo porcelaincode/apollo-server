@@ -6,6 +6,7 @@ module.exports = gql`
     brand: String
     name: String!
     skus: [ProductSku]
+    inStore: Boolean
   }
   type ProductSku {
     id: ID!
@@ -27,8 +28,53 @@ module.exports = gql`
     discount: String
   }
 
+  type Inventory {
+    id: ID!
+    meta: InventoryMeta
+    products: [InventoryProduct]
+  }
+  type InventoryMeta {
+    storeId: String!
+    lastUpdated: String!
+  }
+  type InventoryProduct {
+    id: String
+    url: String
+    name: String
+    quantity: InventorySkuQuantity
+    price: SkuPrice
+    barcode: String
+  }
+  type InventorySkuQuantity {
+    units: Int!
+    count: String!
+    type: String!
+  }
+
+  input PriceInput {
+    mrp: String!
+    discount: String
+  }
+  input QuantityInput {
+    units: Int
+    count: String!
+    type: String
+  }
+  input ProductToInventoryInput {
+    id: String
+    barcode: String
+    brand: String!
+    name: String
+    quantity: QuantityInput
+    price: PriceInput
+  }
+
   type Query {
-    getProduct(id: String): Product
+    getInventory: Inventory!
+    getProduct(storeId: String!, barcode: String!): Product
     getProducts(name: String, limit: Int): [Product]
+  }
+  type Mutation {
+    addToInventory(productInfo: [ProductToInventoryInput]): Boolean!
   }
 `;

@@ -469,9 +469,17 @@ module.exports = {
         AuthenticationError("Request not verified.");
       }
     },
-    async deliveredOrder(
+    async alterDeliveryState(
       _: any,
-      { id, coordinates }: { id: string; coordinates: [string, string] },
+      {
+        id,
+        coordinates,
+        dispatched,
+      }: {
+        id: string;
+        coordinates: [string, string];
+        dispatched: Boolean;
+      },
       req: any
     ) {
       const { loggedUser, source } = checkAuth(req);
@@ -487,6 +495,37 @@ module.exports = {
 
       if (!orderToUpdate) {
         throw new AuthenticationError("Store not authorised.");
+      }
+
+      if (dispatched) {
+        const orderUpdate = await Order.updateOne(
+          {
+            _id: bson.ObjectId(id),
+          },
+          {
+            $set: {
+              "state.delivery.dispatched": dispatched,
+            },
+          }
+        );
+
+        pubsub.publish(ORDER_UPDATE, {
+          orderUpdate: {
+            ...orderToUpdate._doc,
+            id: orderToUpdate._id,
+            state: {
+              ...orderToUpdate._doc.state,
+              delivery: {
+                ...orderToUpdate._doc.state.delivery,
+                dispatched: dispatched,
+              },
+            },
+          },
+        });
+
+        console.log(`Order ${id} dispatched.`);
+
+        return orderUpdate.modifiedCount ? true : false;
       }
 
       const deliveryDistance = calcCrow(

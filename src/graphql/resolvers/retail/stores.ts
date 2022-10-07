@@ -8,6 +8,8 @@ import { StoreInfoProps } from "../../../props";
 
 const Store = mongoose.model.Store || require("../../../models/Store");
 const Order = mongoose.model.Order || require("../../../models/Order");
+const Inventory =
+  mongoose.model.Inventory || require("../../../models/Inventory");
 
 const checkAuth = require("../../../utils/checkAuth");
 const Geohash = require("../../../geohash");
@@ -19,6 +21,7 @@ const {
 } = require("../../../utils/generalUtil");
 
 const STORE_UPDATE = "STORE_UPDATE";
+const INVENTORY_UPDATE = "INVENTORY_UPDATE";
 
 module.exports = {
   Query: {
@@ -179,19 +182,22 @@ module.exports = {
           });
 
           const res = await newStore.save();
-          console.log(`Store ${res._id} registered.`);
+
+          const newInventory = new Inventory({
+            meta: {
+              storeId: res._id,
+              lastUpdated: new Date().toISOString(),
+            },
+            products: [],
+          });
+          const resInv = await newInventory.save();
+
+          console.log(
+            `Store ${res._id} registered. Inventory ${resInv._id} assigned.`
+          );
 
           const token = generateToken(res);
           const refreshToken = generateRefreshToken(res);
-
-          pubsub.publish(STORE_UPDATE, {
-            storeUpdate: {
-              ...res._doc,
-              id: res._id,
-              token,
-              refreshToken,
-            },
-          });
 
           return {
             ...res._doc,
@@ -209,6 +215,14 @@ module.exports = {
     storeUpdate: {
       subscribe: withFilter(
         () => pubsub.asyncIterator([STORE_UPDATE]),
+        (payload: any, variables: any) => {
+          return payload.id === variables.id;
+        }
+      ),
+    },
+    inventoryUpdate: {
+      subscribe: withFilter(
+        () => pubsub.asyncIterator([INVENTORY_UPDATE]),
         (payload: any, variables: any) => {
           return payload.id === variables.id;
         }
