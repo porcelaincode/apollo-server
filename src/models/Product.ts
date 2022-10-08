@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 mongoose.Promise = global.Promise;
 
-const skuSchema = new mongoose.Schema({
+const productSchema = new mongoose.Schema({
   brand: {
     type: String,
   },
@@ -41,17 +41,6 @@ const skuSchema = new mongoose.Schema({
   ratings: {
     type: [Number],
   },
-});
-
-const productSchema = new mongoose.Schema({
-  brand: {
-    type: String,
-  },
-  name: {
-    type: String,
-    required: true,
-  },
-  skus: [skuSchema],
 });
 
 module.exports =

@@ -153,19 +153,17 @@ module.exports = {
         await asyncForEach(data.products, async (item) => {
           if (item.inStore) {
           } else {
-            const p = await Product.findOne({ "skus._id": item.id });
+            const p = await Product.findById(item.id);
 
             if (p) {
-              const sp = p.skus.find((e) => e._id.toString() === item.id);
-
               products.push({
-                brand: sp.brand,
-                name: sp.name,
-                url: sp.url,
-                price: sp.price,
+                brand: p.brand,
+                name: p.name,
+                url: p.url,
+                price: p.price,
                 quantity: item.quantity,
                 totalAmount: (
-                  item.quantity * parseFloat(sp.price.mrp)
+                  item.quantity * parseFloat(p.price.mrp)
                 ).toString(),
               });
             }

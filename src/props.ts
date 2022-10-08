@@ -139,7 +139,7 @@ export interface TwilioMessageProps {
 
 // product props
 
-export interface SkuProps {
+export interface ProductProps {
   id: string;
   name: string;
   brand: string;
@@ -153,15 +153,7 @@ export interface SkuProps {
     mrp: string;
     sale: string;
   };
-}
-
-export interface ProductProps {
-  id: string;
-  name: string;
-  brand: string;
-  skus: Array<SkuProps>;
   itemQuantity?: string;
-  ratings: any;
 }
 
 export interface SearchProductProps {

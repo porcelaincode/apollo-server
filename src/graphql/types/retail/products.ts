@@ -3,27 +3,21 @@ import { gql } from "apollo-server-express";
 module.exports = gql`
   type Product {
     id: ID!
-    brand: String
-    name: String!
-    skus: [ProductSku]
-    inStore: Boolean
-  }
-  type ProductSku {
-    id: ID!
     url: String
     fetchUri: String
     name: String
     brand: String
-    quantity: SkuQuantity
-    price: SkuPrice
+    quantity: QuantityType
+    price: PriceType
     barcode: String
     ratings: [Int]
+    inStore: Boolean
   }
-  type SkuQuantity {
+  type QuantityType {
     count: String!
     type: String!
   }
-  type SkuPrice {
+  type PriceType {
     mrp: String!
     discount: String
   }
@@ -41,11 +35,11 @@ module.exports = gql`
     id: String
     url: String
     name: String
-    quantity: InventorySkuQuantity
-    price: SkuPrice
+    quantity: InventoryQuantityType
+    price: PriceType
     barcode: String
   }
-  type InventorySkuQuantity {
+  type InventoryQuantityType {
     units: Int!
     count: String!
     type: String!
