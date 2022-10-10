@@ -69,6 +69,7 @@ module.exports = gql`
     getProducts(name: String, limit: Int): [Product]
   }
   type Mutation {
+    editProduct(id: String!, barcode: String!, url: String): Product!
     addToInventory(productInfo: [ProductToInventoryInput]): Boolean!
   }
 `;

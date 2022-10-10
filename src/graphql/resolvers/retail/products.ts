@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+const bson = require("bson");
+
 import { UserInputError } from "apollo-server-express";
 
 const Product = mongoose.model.Product || require("../../../models/Product");
@@ -84,6 +86,28 @@ module.exports = {
     },
   },
   Mutation: {
+    async editProduct(
+      _,
+      { id, barcode, url }: { id: string; barcode: string; url?: string },
+      req
+    ) {
+      // const { loggedUser, source } = checkAuth(req);
+
+      await Product.updateOne(
+        { _id: bson.ObjectId(id) },
+        {
+          barcode: barcode,
+          url: url,
+        }
+      );
+
+      const product = await Product.findById(id);
+
+      return {
+        ...product._doc,
+        id: product._id,
+      };
+    },
     async addToInventory(_, { productInfo }, req) {
       const { loggedUser, source } = checkAuth(req);
 
