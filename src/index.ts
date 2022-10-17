@@ -23,7 +23,7 @@ const schema = makeExecutableSchema({ typeDefs, resolvers });
 require("dotenv").config();
 
 const PORT: any = process.env.PORT || 5000;
-const DATABASE: string = process.env.MONGODB_CONNECTION_STRING;
+const DATABASE: string = process.env.MONGODB_TEST_CONNECTION_STRING;
 
 // Create an Express app and HTTP server; we will attach both the WebSocket
 // server and the ApolloServer to this HTTP server.
@@ -91,6 +91,5 @@ mongoose
     useUnifiedTopology: true,
   })
   .then(() => {
-    console.log(`Connected to MongoDB ATLAS Database successfully!`);
     return startApolloServer();
   });

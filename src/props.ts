@@ -124,11 +124,12 @@ export interface OrderProductInputProps {
 
 export interface CreateOrderProps {
   products: Array<OrderProductInputProps>;
+  grandTotal?: string;
   addressId: string;
   storeId: string;
   delivery: boolean;
   deliverBy: string;
-  addToAccount: boolean;
+  accountId?: string;
 }
 
 // twillio props

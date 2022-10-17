@@ -4,7 +4,7 @@ const bson = require("bson");
 import { UserInputError, ValidationError } from "apollo-server-express";
 import { withFilter } from "graphql-subscriptions";
 
-import { StoreInfoProps } from "../../../props";
+import { ContactProps, StoreInfoProps } from "../../../props";
 
 const Store = mongoose.model.Store || require("../../../models/Store");
 const Order = mongoose.model.Order || require("../../../models/Order");
@@ -103,6 +103,27 @@ module.exports = {
     },
   },
   Mutation: {
+    async addAccount(
+      _,
+      { contact, orderId }: { contact: ContactProps; orderId: string },
+      req
+    ) {
+      const { loggedUser, source } = checkAuth(req);
+
+      if (source.startsWith("locale-store")) {
+        const account = await Store.findOne({
+          "accounts.$.contact": contact,
+        });
+
+        if (account) {
+          console.log("Account exists.");
+        } else {
+          console.log("Creating account.");
+        }
+      } else {
+        throw new Error("User not authenticated to access this path");
+      }
+    },
     async editStore(
       _: any,
       { edit, storeInfo }: { edit: boolean; storeInfo: StoreInfoProps },

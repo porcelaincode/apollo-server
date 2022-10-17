@@ -8,13 +8,13 @@ const client = redis.createClient({
   port: process.env.REDIS_PORT,
 });
 
-client.on("connect", () => {
-  console.log("Connected to Redis successfully!");
-});
+// client.on("connect", () => {
+//   console.log("Connected to Redis successfully!");
+// });
 
-client.on("error", (error) => {
-  console.log("Redis connection error :", error);
-});
+// client.on("error", (error) => {
+//   console.log("Redis connection error :", error);
+// });
 
 client.get = promisify(client.get).bind(client);
 client.set = promisify(client.set).bind(client);

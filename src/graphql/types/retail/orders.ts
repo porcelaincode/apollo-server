@@ -70,11 +70,12 @@ module.exports = gql`
   }
   input OrderInfo {
     products: [OrderInputProduct]
+    grandTotal: String
     addressId: String!
     storeId: String!
     delivery: Boolean!
     deliverBy: String
-    addToAccount: Boolean!
+    accountId: String
   }
   type Query {
     getOrder(id: String!): Order!

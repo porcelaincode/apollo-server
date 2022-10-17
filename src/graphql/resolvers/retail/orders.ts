@@ -125,6 +125,9 @@ module.exports = {
             created: {
               date: new Date().toISOString(),
             },
+            payment: {
+              grandAmount: data.grandTotal,
+            },
           },
         });
 
@@ -184,7 +187,7 @@ module.exports = {
 
         const newOrder = new Order({
           products,
-          linkedAccount: data.addToAccount ? loggedUser.id : null,
+          linkedAccount: data.accountId || null,
           meta: {
             userId,
             storeId: data.storeId,

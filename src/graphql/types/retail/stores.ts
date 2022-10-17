@@ -75,6 +75,7 @@ module.exports = gql`
     getConfirmation(storeId: String!): ConfirmType
   }
   type Mutation {
+    addAccount(contact: ContactInput!, orderId: String!): Boolean!
     editStore(edit: Boolean!, storeInfo: StoreInfo): Store!
   }
   type Subscription {
