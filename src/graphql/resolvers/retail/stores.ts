@@ -129,11 +129,7 @@ module.exports = {
       { edit, storeInfo }: { edit: boolean; storeInfo: StoreInfoProps },
       req
     ) {
-      const { loggedUser } = checkAuth(req);
-
       const data = { ...storeInfo };
-
-      console.log(`Store ${loggedUser.id} changing details.`);
 
       const geohash = Geohash.encode(
         Number(data.address.location.coordinates[0]),
@@ -144,6 +140,8 @@ module.exports = {
       try {
         if (edit) {
           const { loggedUser, source } = checkAuth(req);
+
+          console.log(`Store ${loggedUser.id} changing details.`);
 
           const storeUpdate = await Store.updateOne(
             { _id: bson.ObjectId(loggedUser.id) },

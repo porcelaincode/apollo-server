@@ -41,6 +41,7 @@ const createApolloServer = async (
   const connection = mongoose.connection;
   connection.once("open", function () {
     mongoose.connection.db.dropCollection("users");
+    mongoose.connection.db.dropCollection("stores");
   });
 
   return { server, url };
@@ -112,7 +113,7 @@ const updateData = {
   },
 };
 
-describe("auth user", () => {
+describe("user resolvers", () => {
   let server, url, token;
 
   // before the tests we spin up a new Apollo Server
@@ -160,7 +161,62 @@ describe("auth user", () => {
       })
       .send(updateData);
 
-    console.log(response._body);
     expect(response._body.data.updateAddress).toBeTruthy();
+  });
+});
+
+const REGISTER_STORE = `
+  mutation EditStore($edit: Boolean!, $storeInfo: StoreInfo) {
+    editStore(edit: $edit, storeInfo: $storeInfo) {
+      id
+    }
+  }
+`;
+
+const storeRegisterData = {
+  query: REGISTER_STORE,
+  variables: {
+    edit: false,
+    storeInfo: {
+      name: config.retail.name + " Superstore",
+      contact: config.retail.contact,
+      address: config.retail.address,
+    },
+  },
+};
+
+const storeLoginData = {
+  query: LOGIN_TYPE,
+  variables: {
+    contact: config.retail.contact,
+  },
+};
+
+describe("store resolvers", () => {
+  let server, url, token;
+
+  // before the tests we spin up a new Apollo Server
+  beforeAll(async () => {
+    ({ server, url } = await createApolloServer({ port: PORT }));
+  });
+
+  afterAll(async () => {
+    await server?.stop();
+  });
+
+  it("register store", async () => {
+    const response = await request(url).post("").send(storeRegisterData);
+    console.log(response._body);
+    expect(response._body.data.editStore.id).not.toBeUndefined();
+  });
+
+  it("login store", async () => {
+    const result = await request(url)
+      .post("")
+      .set({ source: `${config.retail.source}` })
+      .send(storeLoginData);
+
+    token = result._body.data.login.token;
+    expect(result._body.data).not.toBeNull();
   });
 });
