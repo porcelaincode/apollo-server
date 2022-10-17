@@ -31,6 +31,7 @@ const createApolloServer = async (
 
   const { url } = await startStandaloneServer(server, {
     listen: listenOptions,
+    context: async ({ req }: any) => ({ req }),
   });
 
   mongoose.connect(DATABASE, {
@@ -63,6 +64,18 @@ const REGISTER_TYPE = `
   }
 `;
 
+const EDIT_TYPE = `
+  mutation EditProfile($userInfoInput: UserInfoInput) {
+    editProfile(userInfoInput: $userInfoInput)
+  }
+`;
+
+const ADDRESS_TYPE = `
+  mutation UpdateAddress($id: String, $addressInfo: UpdateAddress) {
+    updateAddress(id: $id, addressInfo: $addressInfo)
+  }
+`;
+
 // this is the query for our test
 const registerData = {
   query: REGISTER_TYPE,
@@ -81,8 +94,26 @@ const loginData = {
   },
 };
 
+const editData = {
+  query: EDIT_TYPE,
+  variables: {
+    userInfoInput: {
+      name: "Edited Name",
+      contact: config.user.contact,
+    },
+  },
+};
+
+const updateData = {
+  query: ADDRESS_TYPE,
+  variables: {
+    id: "",
+    addressInfo: config.user.address.addressInfo,
+  },
+};
+
 describe("auth user", () => {
-  let server, url;
+  let server, url, token;
 
   // before the tests we spin up a new Apollo Server
   beforeAll(async () => {
@@ -93,7 +124,7 @@ describe("auth user", () => {
     await server?.stop();
   });
 
-  it("registered user", async () => {
+  it("register user", async () => {
     const response = await request(url).post("").send(registerData);
     expect(response._body.data.register.id).not.toBeUndefined();
   });
@@ -104,8 +135,32 @@ describe("auth user", () => {
       .set({ source: `${config.user.source}` })
       .send(loginData);
 
-    console.log(result);
-
+    token = result._body.data.login.token;
     expect(result._body.data).not.toBeNull();
+  });
+
+  it("edit profile", async () => {
+    const response = await request(url)
+      .post("")
+      .set({
+        Authorization: `Bearer ${token}`,
+        source: `${config.user.source}`,
+      })
+      .send(editData);
+
+    expect(response._body.data.editProfile).toBeTruthy();
+  });
+
+  it("add address", async () => {
+    const response = await request(url)
+      .post("")
+      .set({
+        Authorization: `Bearer ${token}`,
+        source: `${config.user.source}`,
+      })
+      .send(updateData);
+
+    console.log(response._body);
+    expect(response._body.data.updateAddress).toBeTruthy();
   });
 });

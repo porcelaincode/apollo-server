@@ -8,6 +8,12 @@ async function asyncForEach(array: any[], callback: any) {
   }
 }
 
+function log(str: string) {
+  if (process.env.NODE_ENV === "production") {
+    console.log(log);
+  }
+}
+
 function generate(n: number): string {
   var add = 1,
     max = 12 - add; // 12 is the min safe number Math.random() can generate without it starting to pad the end with zeros.
@@ -57,3 +63,4 @@ module.exports.generateOTP = generate;
 module.exports.addMinutesToDate = addMinutesToDate;
 module.exports.generateRefreshToken = generateRefreshToken;
 module.exports.generateToken = generateToken;
+module.exports.log = log;

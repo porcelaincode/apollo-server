@@ -444,14 +444,14 @@ module.exports = {
           },
         });
 
-        return user_.nModified ? true : false;
+        return user_.modifiedCount ? true : false;
       } else {
         return false;
       }
     },
     async editProfile(
       _: any,
-      { editProfileInput }: { editProfileInput: EditProfileProps },
+      { userInfoInput }: { userInfoInput: EditProfileProps },
       req: any
     ) {
       const { loggedUser } = checkAuth(req);
@@ -462,8 +462,8 @@ module.exports = {
         { _id: loggedUser.id },
         {
           $set: {
-            name: editProfileInput.name,
-            contact: editProfileInput.contact,
+            name: userInfoInput.name,
+            contact: userInfoInput.contact,
           },
         }
       );
@@ -472,12 +472,12 @@ module.exports = {
         userUpdate: {
           ...user_._doc,
           id: user_._id,
-          name: editProfileInput.name,
-          contact: editProfileInput.contact,
+          name: userInfoInput.name,
+          contact: userInfoInput.contact,
         },
       });
 
-      return user_.nModified ? true : false;
+      return user_.modifiedCount ? true : false;
     },
   },
   Subscriptions: {
