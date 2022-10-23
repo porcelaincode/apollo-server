@@ -2,16 +2,19 @@ const mongoose = require("mongoose");
 const bson = require("bson");
 
 import { UserInputError, ValidationError } from "apollo-server-express";
+import e = require("express");
 import { withFilter } from "graphql-subscriptions";
 
-import { ContactProps, StoreInfoProps } from "../../../props";
+import { ContactProps, ProductProps, StoreInfoProps } from "../../../props";
 
 const Store = mongoose.model.Store || require("../../../models/Store");
 const Order = mongoose.model.Order || require("../../../models/Order");
+const Product = mongoose.model.Product || require("../../../models/Product");
 const Inventory =
   mongoose.model.Inventory || require("../../../models/Inventory");
 
 const checkAuth = require("../../../utils/checkAuth");
+const { asyncForEach } = require("../../../utils/generalUtil");
 const Geohash = require("../../../geohash");
 const pubsub = require("../../../pubsub");
 
@@ -228,6 +231,80 @@ module.exports = {
       } catch (err) {
         throw err;
       }
+    },
+    async addToInventory(
+      _,
+      { products }: { products: Array<ProductProps> },
+      req
+    ) {
+      const { loggedUser, source } = checkAuth(req);
+
+      if (source.startsWith("locale-store")) {
+        const inventory = await Inventory.findOne({
+          "meta.storeId": loggedUser.id,
+        });
+
+        const inventoryProducts = [...inventory.products];
+
+        await asyncForEach(products, async (product) => {
+          const inArray = inventoryProducts.findIndex(
+            (p) => p.id === product.id
+          );
+
+          const p = await Product.findById(product.id);
+
+          if (inArray > -1) {
+            inventoryProducts.splice(inArray, 1);
+          }
+
+          if (product.barcode && p.barcode.trim().length === 0) {
+            await Product.updateOne(
+              { _id: bson.ObjectId(product.id) },
+              {
+                $set: {
+                  barcode: product.barcode,
+                },
+              }
+            );
+          }
+
+          delete p._doc._id;
+          delete p._doc.ratings;
+          delete product.url;
+
+          inventoryProducts.push({
+            ...p._doc,
+            ...product,
+          });
+        });
+
+        const updated = await Inventory.updateOne(
+          {
+            "meta.storeId": loggedUser.id,
+          },
+          {
+            $set: {
+              "meta.lastUpdated": new Date().toISOString(),
+              products: inventoryProducts,
+            },
+          }
+        );
+
+        // pubsub.publish(INVENTORY_UPDATE, {
+        //   inventoryUpdate: {
+        //     ...inventory._doc,
+        //     id: inventory._id,
+        //     meta: {
+        //       lastUpdated: new Date().toISOString(),
+        //     },
+        //   },
+        // });
+
+        return updated.modifiedCount ? true : false;
+        // return false;
+      }
+
+      throw new AuthenticationError("User cannot access this route.");
     },
   },
   Subscriptions: {

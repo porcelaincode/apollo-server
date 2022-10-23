@@ -22,10 +22,60 @@ REFRESH_TOKEN_SECRET=
 GOOGLE_MAPS_APIKEY=
 ```
 
-## Release History
+## Types
 
-- 0.0.9
-  - The first production release
-  - CHANGE: typedefs seperated
-- 0.0.1
-  - Work in progress
+### Queries
+
+```javascript
+// user
+getFeed;
+getUser;
+twoFactorAuth;
+checkAuth;
+
+// store
+getStore;
+getConfirmation;
+
+// order
+getOrder;
+getOrders;
+getDeliveryTimes; //FIXME: Unnecessary query
+```
+
+### Mutations
+
+```javascript
+// user
+login;
+register;
+updateAddress;
+deleteAddress;
+editProfile;
+deleteAccount;
+
+// store
+addAccount;
+editStore;
+addToInventory;
+
+// order
+createOrder;
+alterOrderState;
+alterDeliveryState;
+```
+
+### Subscriptions
+
+```javascript
+// user
+userUpdate;
+
+// store
+storeUpdate;
+inventoryUpdate;
+accountUpdate;
+
+// order
+orderUpdate;
+```

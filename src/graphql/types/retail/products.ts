@@ -55,21 +55,27 @@ module.exports = gql`
     type: String
   }
   input ProductToInventoryInput {
-    id: String
-    barcode: String
-    brand: String!
+    id: String!
+    barcode: String!
+    brand: String
     name: String
     quantity: QuantityInput
     price: PriceInput
+    url: String
   }
 
   type Query {
     getInventory: Inventory!
     getProduct(storeId: String!, barcode: String!): Product
-    getProducts(name: String, limit: Int): [Product]
+    # FIXME: Two queries of same Type
+    getProducts(name: String!, limit: Int!): [Product]
+    getProductsFromStore(
+      name: String!
+      limit: Int!
+      storeId: String!
+    ): Inventory
   }
   type Mutation {
-    editProduct(id: String!, barcode: String!, url: String): Product!
-    addToInventory(productInfo: [ProductToInventoryInput]): Boolean!
+    editProduct(product: ProductToInventoryInput): Product!
   }
 `;

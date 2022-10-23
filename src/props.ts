@@ -147,8 +147,9 @@ export interface ProductProps {
   barcode: string;
   ratings: Array<number>;
   quantity: {
-    count: String;
-    type: String;
+    units?: number;
+    count: string;
+    type: string;
   };
   price: {
     mrp: string;
@@ -163,24 +164,6 @@ export interface SearchProductProps {
   category?: string;
   limit: number;
   offset: number;
-}
-
-export interface CreateProductProps {
-  productId: string;
-  brand: string;
-  name: string;
-  imageUrl: string;
-  mrp: string;
-  sale: string;
-  isDivisible: boolean;
-  inInventory: boolean;
-  isEdible: boolean;
-  isSale: boolean;
-  isVeg: boolean;
-  isVegan: boolean;
-  count: string;
-  type: string;
-  barcode: string;
 }
 
 // stores props
@@ -221,7 +204,6 @@ export interface AddToAccountsProps {
   name: string;
   private: boolean;
   line1: string;
-  line2: string;
   contact: ContactProps;
   orderId: string;
 }

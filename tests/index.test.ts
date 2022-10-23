@@ -38,10 +38,12 @@ const createApolloServer = async (
     useNewUrlParser: true,
     useUnifiedTopology: true,
   });
+
   const connection = mongoose.connection;
   connection.once("open", function () {
     mongoose.connection.db.dropCollection("users");
     mongoose.connection.db.dropCollection("stores");
+    mongoose.connection.db.dropCollection("inventories");
   });
 
   return { server, url };

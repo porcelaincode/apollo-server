@@ -70,6 +70,18 @@ module.exports = gql`
     address: StoreAddressInput
   }
 
+  input ProductInput {
+    id: String!
+    price: String
+    name: String
+    quantity: QuantityInput
+  }
+  input QuantityInput {
+    units: Int
+    count: String
+    type: String
+  }
+
   type Query {
     getStore: Store!
     getConfirmation(storeId: String!): ConfirmType
@@ -77,6 +89,7 @@ module.exports = gql`
   type Mutation {
     addAccount(contact: ContactInput!, orderId: String!): Boolean!
     editStore(edit: Boolean!, storeInfo: StoreInfo): Store!
+    addToInventory(products: [ProductToInventoryInput]): Boolean!
   }
   type Subscription {
     storeUpdate(id: String!): Store!

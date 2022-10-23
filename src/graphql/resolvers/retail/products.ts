@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const bson = require("bson");
 
 import { UserInputError } from "apollo-server-express";
+import { ProductProps } from "../../../props";
 
 const Product = mongoose.model.Product || require("../../../models/Product");
 const Store = mongoose.model.Store || require("../../../models/Store");
@@ -53,84 +54,113 @@ module.exports = {
     },
     async getProducts(
       _: any,
-      { name, limit }: { name: string; limit: number },
+      {
+        name,
+        limit,
+        storeId,
+      }: { name: string; limit: number; storeId: string },
       req
     ) {
       const { loggedUser, source } = checkAuth(req);
 
-      let products = [];
-
-      if (limit) {
-        products = await Product.find({
-          name: {
-            $regex: "^" + name,
-            $options: "i",
-          },
-        }).limit(limit);
-      } else {
-        products = await Product.find({
-          name: {
-            $regex: "^" + name,
-            $options: "i",
-          },
-        });
-      }
+      let products: Array<ProductProps>;
+      products = await Product.find({
+        name: {
+          $regex: "^" + name,
+          $options: "i",
+        },
+      }).limit(limit ? limit : 10000);
 
       if (products) {
-        console.log(`${loggedUser.id} looked up ${name}`);
+        console.log(`${loggedUser.id} looked up ${name} in Store ${storeId}`);
         return products;
       } else {
-        console.log(`${loggedUser.id} couldn't find ${name}`);
+        console.log(
+          `${loggedUser.id} couldn't find ${name} in Store ${storeId}`
+        );
+        throw new UserInputError("No Products not found");
+      }
+    },
+    async getProductsFromStore(
+      _: any,
+      {
+        name,
+        limit,
+        storeId,
+      }: { name: string; limit: number; storeId: string },
+      req
+    ) {
+      const { loggedUser, source } = checkAuth(req);
+
+      const inventory = await Inventory.aggregate([
+        {
+          $match: {
+            "meta.storeId": storeId,
+            products: {
+              $elemMatch: {
+                $and: [
+                  {
+                    name: {
+                      $regex: "^" + name,
+                      $options: "i",
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            products: {
+              $filter: {
+                input: "$products",
+                as: "product",
+                cond: {
+                  $eq: [
+                    "$product.name",
+                    {
+                      $regex: "^" + name,
+                      $options: "i",
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      ]).limit(limit);
+
+      if (inventory) {
+        console.log(`${loggedUser.id} looked up ${name} in Store ${storeId}`);
+        return inventory;
+      } else {
+        console.log(
+          `${loggedUser.id} couldn't find ${name} in Store ${storeId}`
+        );
         throw new UserInputError("No Products not found");
       }
     },
   },
   Mutation: {
-    async editProduct(
-      _,
-      { id, barcode, url }: { id: string; barcode: string; url?: string },
-      req
-    ) {
+    async editProduct(_, { product }: { product: ProductProps }, req) {
       // const { loggedUser, source } = checkAuth(req);
 
+      const p = await Product.findById(product.id);
+
+      delete product.id;
+
       await Product.updateOne(
-        { _id: bson.ObjectId(id) },
+        { _id: bson.ObjectId(product.id) },
         {
-          barcode: barcode,
-          url: url,
+          ...product,
         }
       );
 
-      const product = await Product.findById(id);
-
       return {
-        ...product._doc,
-        id: product._id,
+        ...p._doc,
+        ...product,
       };
-    },
-    async addToInventory(_, { productInfo }, req) {
-      const { loggedUser, source } = checkAuth(req);
-
-      if (source.startsWith("locale-store")) {
-        const data = [...productInfo];
-
-        await asyncForEach(data, async (p: any) => {
-          if (p.id) {
-            const product = await Product.findById(p.id);
-          }
-        });
-
-        const res = await Inventory.findOne({ "meta.storeId": loggedUser.id });
-
-        pubsub.publish(INVENTORY_UPDATE, {
-          storeUpdate: {
-            ...res._doc,
-            id: res._id,
-          },
-        });
-      }
-
-      throw new Error("User not authorised to access this route.");
     },
   },
 };
