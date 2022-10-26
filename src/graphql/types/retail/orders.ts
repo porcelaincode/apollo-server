@@ -34,9 +34,10 @@ module.exports = gql`
   }
   type OrderDeliveryAddress {
     line: String
-    location: PointType!
+    location: PointType
   }
   type OrderPaymentType {
+    method: String
     paid: Boolean
     grandAmount: String!
     paidAt: String
@@ -71,11 +72,12 @@ module.exports = gql`
   input OrderInfo {
     products: [OrderInputProduct]
     grandTotal: String
-    addressId: String!
+    addressId: String
     storeId: String!
     delivery: Boolean!
     deliverBy: String
     accountId: String
+    method: String
   }
   type Query {
     getOrder(id: String!): Order!

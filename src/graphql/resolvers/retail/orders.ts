@@ -119,14 +119,69 @@ module.exports = {
       if (source.startsWith("locale-store")) {
         console.log(`Store ${loggedUser.id} requesting to register an order.`);
 
+        let address: StoreLocationProps;
+        const products = [];
+        let grandAmount = 0;
+
+        await asyncForEach(data.products, async (item) => {
+          if (item.inStore) {
+          } else {
+            const p = await Product.findById(item.id);
+
+            if (p) {
+              products.push({
+                brand: p.brand,
+                name: p.name,
+                url: p.url,
+                price: p.price,
+                quantity: item.quantity,
+                totalAmount: (
+                  item.quantity * parseFloat(p.price.mrp)
+                ).toString(),
+              });
+            }
+          }
+        });
+
+        products.forEach((e) => {
+          grandAmount += parseFloat(e.totalAmount);
+        });
+
         const newOrder = new Order({
-          ...data,
+          products,
+          linkedAccount: data.accountId || null,
+          meta: {
+            userId: loggedUser.id,
+            storeId: data.storeId,
+          },
           state: {
+            method: data.method,
+            delivery: {
+              toDeliver: data.delivery,
+              address: data.delivery
+                ? {
+                    line: address.line1,
+                    location: address.location,
+                  }
+                : null,
+              deliverBy:
+                new Date(
+                  Date.now() + parseFloat(data.deliverBy)
+                ).toISOString() || null,
+            },
             created: {
+              date: new Date().toISOString(),
+              message: "Registered In Store order.",
+            },
+            order: {
+              accepted: true,
               date: new Date().toISOString(),
             },
             payment: {
-              grandAmount: data.grandTotal,
+              paid: data.accountId ? false : true,
+              paidAt: data.accountId ? null : new Date().toISOString(),
+              method: data.method,
+              grandAmount: grandAmount,
             },
           },
         });
@@ -193,6 +248,7 @@ module.exports = {
             storeId: data.storeId,
           },
           state: {
+            method: data.method,
             created: {
               date: new Date().toISOString(),
             },

@@ -1,4 +1,4 @@
-import { UserProps } from "../props";
+import { ProductProps, UserProps } from "../props";
 
 const jwt = require("jsonwebtoken");
 
@@ -7,12 +7,14 @@ async function asyncForEach(array: any[], callback: any) {
     await callback(array[index], index, array);
   }
 }
+module.exports.asyncForEach = asyncForEach;
 
 function log(str: string) {
   if (process.env.NODE_ENV === "production") {
     console.log(log);
   }
 }
+module.exports.log = log;
 
 function generate(n: number): string {
   var add = 1,
@@ -28,6 +30,7 @@ function generate(n: number): string {
   data = ("" + number).substring(add);
   return data;
 }
+module.exports.generateOTP = generate;
 
 function generateToken(user: UserProps) {
   return jwt.sign(
@@ -40,6 +43,7 @@ function generateToken(user: UserProps) {
     { expiresIn: "7d" }
   );
 }
+module.exports.generateToken = generateToken;
 
 function generateRefreshToken(user: UserProps) {
   return jwt.sign(
@@ -50,6 +54,7 @@ function generateRefreshToken(user: UserProps) {
     process.env.REFRESH_TOKEN_SECRET
   );
 }
+module.exports.generateRefreshToken = generateRefreshToken;
 
 function addMinutesToDate(objDate: number, intMinutes: number) {
   var numberOfMlSeconds = objDate;
@@ -57,10 +62,16 @@ function addMinutesToDate(objDate: number, intMinutes: number) {
   var newDateObj = new Date(numberOfMlSeconds + addMlSeconds).toISOString();
   return newDateObj;
 }
-
-module.exports.asyncForEach = asyncForEach;
-module.exports.generateOTP = generate;
 module.exports.addMinutesToDate = addMinutesToDate;
-module.exports.generateRefreshToken = generateRefreshToken;
-module.exports.generateToken = generateToken;
-module.exports.log = log;
+
+function randomizeArray(array: Array<ProductProps>, lim: number) {
+  let c = [...array];
+  let len = array.length;
+
+  if (lim) {
+    c.slice(0, lim);
+  }
+
+  return c;
+}
+module.exports.randomizeArray = randomizeArray;

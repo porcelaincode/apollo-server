@@ -130,6 +130,7 @@ export interface CreateOrderProps {
   delivery: boolean;
   deliverBy: string;
   accountId?: string;
+  method?: string;
 }
 
 // twillio props

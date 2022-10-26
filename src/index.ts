@@ -32,7 +32,7 @@ export async function startApolloServer() {
 
   app.use(cors());
   app.use("/static", express.static("data/images"));
-  app.use("/logo", express.static("data/logos"));
+  app.use("/logo", express.static("data/logo"));
   app.use(
     helmet({
       contentSecurityPolicy:

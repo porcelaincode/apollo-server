@@ -15,6 +15,17 @@ const { asyncForEach } = require("../../../utils/generalUtil");
 
 const INVENTORY_UPDATE = "INVENTORY_UPDATE";
 
+const checkName = (name, str) => {
+  var pattern = str
+    .split("")
+    .map((x) => {
+      return `(?=.*${x})`;
+    })
+    .join("");
+  var regex = new RegExp(`${pattern}`, "g");
+  return name.match(regex);
+};
+
 module.exports = {
   Query: {
     async getInventory(_, {}, req) {
@@ -92,48 +103,15 @@ module.exports = {
     ) {
       const { loggedUser, source } = checkAuth(req);
 
-      const inventory = await Inventory.aggregate([
-        {
-          $match: {
-            "meta.storeId": storeId,
-            products: {
-              $elemMatch: {
-                $and: [
-                  {
-                    name: {
-                      $regex: "^" + name,
-                      $options: "i",
-                    },
-                  },
-                ],
-              },
-            },
-          },
-        },
-        {
-          $project: {
-            products: {
-              $filter: {
-                input: "$products",
-                as: "product",
-                cond: {
-                  $eq: [
-                    "$product.name",
-                    {
-                      $regex: "^" + name,
-                      $options: "i",
-                    },
-                  ],
-                },
-              },
-            },
-          },
-        },
-      ]).limit(limit);
+      const inventory = await Inventory.findOne({ "meta.storeId": storeId });
+
+      var products = [...inventory.products].filter((x) => {
+        return checkName(x.name, name);
+      });
 
       if (inventory) {
         console.log(`${loggedUser.id} looked up ${name} in Store ${storeId}`);
-        return inventory;
+        return { ...inventory._doc, products };
       } else {
         console.log(
           `${loggedUser.id} couldn't find ${name} in Store ${storeId}`

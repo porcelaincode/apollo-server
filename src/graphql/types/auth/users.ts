@@ -31,9 +31,11 @@ module.exports = gql`
   }
   type Feed {
     store: FeedStore
+    products: [InventoryProduct]
   }
   type FeedStore {
     id: String
+    distance: String
     available: Boolean
   }
   type Code {

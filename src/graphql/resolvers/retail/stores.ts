@@ -290,15 +290,16 @@ module.exports = {
           }
         );
 
-        // pubsub.publish(INVENTORY_UPDATE, {
-        //   inventoryUpdate: {
-        //     ...inventory._doc,
-        //     id: inventory._id,
-        //     meta: {
-        //       lastUpdated: new Date().toISOString(),
-        //     },
-        //   },
-        // });
+        pubsub.publish(INVENTORY_UPDATE, {
+          inventoryUpdate: {
+            ...inventory._doc,
+            id: inventory._id,
+            meta: {
+              lastUpdated: new Date().toISOString(),
+            },
+            products: inventoryProducts,
+          },
+        });
 
         return updated.modifiedCount ? true : false;
         // return false;
@@ -312,7 +313,7 @@ module.exports = {
       subscribe: withFilter(
         () => pubsub.asyncIterator([STORE_UPDATE]),
         (payload: any, variables: any) => {
-          return payload.id === variables.id;
+          return payload.storeUpdate.id === variables.id;
         }
       ),
     },
@@ -320,7 +321,7 @@ module.exports = {
       subscribe: withFilter(
         () => pubsub.asyncIterator([INVENTORY_UPDATE]),
         (payload: any, variables: any) => {
-          return payload.id === variables.id;
+          return payload.inventoryUpdate.id === variables.id;
         }
       ),
     },

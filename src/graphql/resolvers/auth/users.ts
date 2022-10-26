@@ -21,6 +21,8 @@ const {
 
 const User = mongoose.model.User || require("../../../models/User");
 const Store = mongoose.model.Store || require("../../../models/Store");
+const Inventory =
+  mongoose.model.Inventory || require("../../../models/Inventory");
 
 const checkAuth = require("../../../utils/checkAuth");
 const {
@@ -28,6 +30,7 @@ const {
   generateRefreshToken,
   generateToken,
   addMinutesToDate,
+  randomizeArray,
 } = require("../../../utils/generalUtil");
 const { findNearbyStores } = require("../../../brain");
 const { twclient } = require("../../../twilio");
@@ -57,6 +60,8 @@ module.exports = {
           id: null,
           available: false,
         },
+        products: [],
+        distance: "",
       };
 
       if (coordinates) {
@@ -70,6 +75,10 @@ module.exports = {
 
         if (nearbyStores[0]) {
           const store = await Store.findById(nearbyStores[0]);
+
+          var inventory = await Inventory.findOne({ "meta.storeId": store.id });
+
+          data.products = randomizeArray([...inventory.products], 10);
           data.store.available = !store.meta.closed;
           data.store.id = store.id;
         }
@@ -485,7 +494,7 @@ module.exports = {
       subscribe: withFilter(
         () => pubsub.asyncIterator([USER_UPDATE]),
         (payload: any, variables: any) => {
-          return payload.id === variables.id;
+          return payload.userUpdate.id === variables.id;
         }
       ),
     },

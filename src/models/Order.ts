@@ -129,6 +129,9 @@ const orderSchema = new mongoose.Schema({
       },
     },
     payment: {
+      method: {
+        type: String,
+      },
       paid: {
         type: Boolean,
       },
