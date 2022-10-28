@@ -44,7 +44,10 @@ module.exports = gql`
     count: String!
     type: String!
   }
-
+  type GetProduct {
+    product: Product
+    inStore: Boolean
+  }
   input PriceInput {
     mrp: String!
     discount: String
@@ -55,7 +58,7 @@ module.exports = gql`
     type: String
   }
   input ProductToInventoryInput {
-    id: String!
+    id: String
     barcode: String!
     brand: String
     name: String
@@ -66,7 +69,7 @@ module.exports = gql`
 
   type Query {
     getInventory: Inventory!
-    getProduct(storeId: String!, barcode: String!): Product
+    getProduct(storeId: String!, barcode: String!): GetProduct
     # FIXME: Two queries of same Type
     getProducts(name: String!, limit: Int!): [Product]
     getProductsFromStore(

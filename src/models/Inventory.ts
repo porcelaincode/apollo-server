@@ -20,6 +20,7 @@ const inventoryProductSchema = new mongoose.Schema(
     quantity: {
       units: {
         type: Number,
+        default: 0,
         required: true,
       },
       count: {

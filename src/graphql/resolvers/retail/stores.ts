@@ -253,7 +253,7 @@ module.exports = {
 
           const p = await Product.findById(product.id);
 
-          if (inArray > -1) {
+          if (inArray >= -1) {
             inventoryProducts.splice(inArray, 1);
           }
 

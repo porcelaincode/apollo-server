@@ -107,7 +107,8 @@ interface OrderPaymentProps {
   paidAt?: string;
 }
 
-interface OrderProductProps {
+export interface OrderProductProps {
+  id?: string;
   brand: string;
   name: string;
   url: string;

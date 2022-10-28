@@ -50,13 +50,31 @@ module.exports = {
       { storeId, barcode }: { storeId: string; barcode: string },
       req
     ) {
-      const { loggedUser, source } = checkAuth(req);
-
-      const inStore = false;
+      const { source } = checkAuth(req, true);
 
       if (source.startsWith("locale-store")) {
         // check if product exists in store
-        const product = await Store;
+        const inventory = await Inventory.findOne({ "meta.storeId": storeId });
+
+        const p = [...inventory.products].find((e) => e.barcode === barcode);
+
+        if (p) {
+          return {
+            product: { ...p },
+            inStore: true,
+          };
+        } else {
+          const product = await Product.findOne({ barcode });
+          return {
+            product: {
+              ...product._doc,
+              id: product._id,
+            },
+            inStore: false,
+          };
+        }
+      } else if (source.startsWith("locale-user")) {
+        throw new Error("User not authorized to acces this route");
       }
 
       throw new Error(
@@ -122,23 +140,40 @@ module.exports = {
   },
   Mutation: {
     async editProduct(_, { product }: { product: ProductProps }, req) {
-      // const { loggedUser, source } = checkAuth(req);
+      const { loggedUser, source } = checkAuth(req);
 
-      const p = await Product.findById(product.id);
+      if (product.id) {
+        const p = await Product.findById(product.id);
 
-      delete product.id;
+        delete product.id;
 
-      await Product.updateOne(
-        { _id: bson.ObjectId(product.id) },
-        {
+        await Product.updateOne(
+          { _id: bson.ObjectId(product.id) },
+          {
+            ...product,
+          }
+        );
+
+        return {
+          ...p._doc,
           ...product,
-        }
-      );
+        };
+      } else {
+        delete product.id;
 
-      return {
-        ...p._doc,
-        ...product,
-      };
+        console.log(product);
+
+        const p = new Product({
+          ...product,
+        });
+
+        const res = await p.save();
+
+        return {
+          ...res._doc,
+          id: res._id,
+        };
+      }
     },
   },
 };

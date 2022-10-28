@@ -1,4 +1,5 @@
 import { withFilter } from "graphql-subscriptions";
+import { updateInventory } from "../../../functions/inventories";
 import { ContactProps, CreateOrderProps, OrderProps } from "../../../props";
 
 const mongoose = require("mongoose");
@@ -116,59 +117,58 @@ module.exports = {
 
       const data = { ...orderInfo };
 
+      let address: StoreLocationProps;
+      const products = [];
+      let grandAmount = 0;
+
+      await asyncForEach(data.products, async (item) => {
+        if (item.inStore) {
+        } else {
+          const p = await Product.findById(item.id);
+
+          if (p) {
+            products.push({
+              brand: p.brand,
+              name: p.name,
+              url: p.url,
+              price: p.price,
+              quantity: item.quantity,
+              totalAmount: (item.quantity * parseFloat(p.price.mrp)).toString(),
+            });
+          }
+        }
+      });
+
+      products.forEach((e) => {
+        grandAmount += parseFloat(e.totalAmount);
+      });
+
+      const orderData = {
+        products,
+        linkedAccount: data.accountId || null,
+        meta: {
+          userId: loggedUser.id,
+          storeId: data.storeId,
+        },
+        state: {
+          method: data.method,
+          delivery: {
+            toDeliver: data.delivery,
+            address: null,
+            deliverBy:
+              new Date(Date.now() + parseFloat(data.deliverBy)).toISOString() ||
+              null,
+          },
+        },
+      };
+
       if (source.startsWith("locale-store")) {
         console.log(`Store ${loggedUser.id} requesting to register an order.`);
 
-        let address: StoreLocationProps;
-        const products = [];
-        let grandAmount = 0;
-
-        await asyncForEach(data.products, async (item) => {
-          if (item.inStore) {
-          } else {
-            const p = await Product.findById(item.id);
-
-            if (p) {
-              products.push({
-                brand: p.brand,
-                name: p.name,
-                url: p.url,
-                price: p.price,
-                quantity: item.quantity,
-                totalAmount: (
-                  item.quantity * parseFloat(p.price.mrp)
-                ).toString(),
-              });
-            }
-          }
-        });
-
-        products.forEach((e) => {
-          grandAmount += parseFloat(e.totalAmount);
-        });
-
         const newOrder = new Order({
-          products,
-          linkedAccount: data.accountId || null,
-          meta: {
-            userId: loggedUser.id,
-            storeId: data.storeId,
-          },
+          ...orderData,
           state: {
-            method: data.method,
-            delivery: {
-              toDeliver: data.delivery,
-              address: data.delivery
-                ? {
-                    line: address.line1,
-                    location: address.location,
-                  }
-                : null,
-              deliverBy:
-                new Date(
-                  Date.now() + parseFloat(data.deliverBy)
-                ).toISOString() || null,
-            },
+            ...orderData.state,
             created: {
               date: new Date().toISOString(),
               message: "Registered In Store order.",
@@ -195,42 +195,14 @@ module.exports = {
           },
         });
 
+        await updateInventory(data.products, data.storeId);
+
         return {
           ...res._doc,
           id: res._id,
         };
       } else if (source.startsWith("locale-user")) {
         console.log(`User ${loggedUser.id} requesting to register an order.`);
-
-        const userId = loggedUser.id;
-        const products = [];
-
-        let address: StoreLocationProps;
-        let grandAmount = 0;
-
-        await asyncForEach(data.products, async (item) => {
-          if (item.inStore) {
-          } else {
-            const p = await Product.findById(item.id);
-
-            if (p) {
-              products.push({
-                brand: p.brand,
-                name: p.name,
-                url: p.url,
-                price: p.price,
-                quantity: item.quantity,
-                totalAmount: (
-                  item.quantity * parseFloat(p.price.mrp)
-                ).toString(),
-              });
-            }
-          }
-        });
-
-        products.forEach((e) => {
-          grandAmount += parseFloat(e.totalAmount);
-        });
 
         if (data.delivery) {
           const u = await User.findById(loggedUser.id);
@@ -241,29 +213,21 @@ module.exports = {
         }
 
         const newOrder = new Order({
-          products,
-          linkedAccount: data.accountId || null,
-          meta: {
-            userId,
-            storeId: data.storeId,
-          },
+          ...orderData,
           state: {
-            method: data.method,
+            ...orderData.state,
             created: {
               date: new Date().toISOString(),
             },
             delivery: {
-              toDeliver: data.delivery,
+              ...orderData.state.delivery,
+
               address: data.delivery
                 ? {
                     line: address.line1,
                     location: address.location,
                   }
                 : null,
-              deliverBy:
-                new Date(
-                  Date.now() + parseFloat(data.deliverBy)
-                ).toISOString() || null,
             },
             payment: {
               paid: false,
