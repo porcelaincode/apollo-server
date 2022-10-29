@@ -92,11 +92,8 @@ module.exports = gql`
       cancel: Boolean
       products: [String]
     ): Boolean!
-    alterDeliveryState(
-      id: String!
-      coordinates: [String]!
-      dispatched: Boolean
-    ): Boolean!
+    dispatchOrder(id: String!): Boolean!
+    deliverOrder(id: String!, coordinates: [String]!): Boolean!
   }
   type Subscription {
     orderUpdate(id: String!): Order!

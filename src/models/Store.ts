@@ -110,6 +110,9 @@ const storeSchema = new mongoose.Schema({
       type: Boolean,
       default: false,
     },
+    lastUpdated: {
+      type: String,
+    },
   },
   address: {
     line: {

@@ -47,7 +47,7 @@ const inventoryProductSchema = new mongoose.Schema(
     },
   },
   {
-    id: false,
+    _id: false,
   }
 );
 

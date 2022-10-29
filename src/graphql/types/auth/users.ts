@@ -24,7 +24,7 @@ module.exports = gql`
     coordinates: [String]
   }
   type UserAddress {
-    id: ID!
+    id: String!
     name: String
     line1: String
     location: PointType
@@ -35,6 +35,8 @@ module.exports = gql`
   }
   type FeedStore {
     id: String
+    storeName: String
+    lastUpdated: String
     distance: String
     available: Boolean
   }

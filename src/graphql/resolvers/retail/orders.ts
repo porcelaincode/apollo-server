@@ -490,16 +490,65 @@ module.exports = {
         AuthenticationError("Request not verified.");
       }
     },
-    async alterDeliveryState(
+    async dispatchOrder(_, { id }, req) {
+      const { loggedUser, source } = checkAuth(req);
+
+      if (source.startsWith("locale-user")) {
+        throw new AuthenticationError("User not authorised.");
+      }
+
+      const orderToUpdate = await Order.findOne({
+        _id: bson.ObjectId(id),
+        "meta.storeId": loggedUser.id,
+      });
+
+      if (!orderToUpdate) {
+        throw new AuthenticationError("Store not authorised.");
+      }
+
+      if (orderToUpdate.state.delivery.dispatched) {
+        throw new Error("Order already dispatched");
+      }
+
+      const orderUpdate = await Order.updateOne(
+        {
+          _id: bson.ObjectId(id),
+        },
+        {
+          $set: {
+            "state.delivery.dispatched": true,
+            "state.delivery.dispatchedAt": new Date().toISOString(),
+          },
+        }
+      );
+
+      pubsub.publish(ORDER_UPDATE, {
+        orderUpdate: {
+          ...orderToUpdate._doc,
+          id: orderToUpdate._id,
+          state: {
+            ...orderToUpdate._doc.state,
+            delivery: {
+              ...orderToUpdate._doc.state.delivery,
+              dispatched: true,
+              dispatchedAt: new Date().toISOString(),
+            },
+          },
+        },
+      });
+
+      console.log(`Order ${id} dispatched.`);
+
+      return orderUpdate.modifiedCount ? true : false;
+    },
+    async deliverOrder(
       _: any,
       {
         id,
         coordinates,
-        dispatched,
       }: {
         id: string;
         coordinates: [string, string];
-        dispatched: Boolean;
       },
       req: any
     ) {
@@ -516,37 +565,6 @@ module.exports = {
 
       if (!orderToUpdate) {
         throw new AuthenticationError("Store not authorised.");
-      }
-
-      if (dispatched) {
-        const orderUpdate = await Order.updateOne(
-          {
-            _id: bson.ObjectId(id),
-          },
-          {
-            $set: {
-              "state.delivery.dispatched": dispatched,
-            },
-          }
-        );
-
-        pubsub.publish(ORDER_UPDATE, {
-          orderUpdate: {
-            ...orderToUpdate._doc,
-            id: orderToUpdate._id,
-            state: {
-              ...orderToUpdate._doc.state,
-              delivery: {
-                ...orderToUpdate._doc.state.delivery,
-                dispatched: dispatched,
-              },
-            },
-          },
-        });
-
-        console.log(`Order ${id} dispatched.`);
-
-        return orderUpdate.modifiedCount ? true : false;
       }
 
       const deliveryDistance = calcCrow(

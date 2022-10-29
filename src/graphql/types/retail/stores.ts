@@ -39,6 +39,7 @@ module.exports = gql`
   type StoreMeta {
     verified: Boolean
     closed: Boolean
+    lastUpdated: String
   }
   type StoreAddress {
     id: ID!

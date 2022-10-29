@@ -5,15 +5,10 @@ import { UserInputError } from "apollo-server-express";
 import { ProductProps } from "../../../props";
 
 const Product = mongoose.model.Product || require("../../../models/Product");
-const Store = mongoose.model.Store || require("../../../models/Store");
 const Inventory =
   mongoose.model.Inventory || require("../../../models/Inventory");
 
 const checkAuth = require("../../../utils/checkAuth");
-const pubsub = require("../../../pubsub");
-const { asyncForEach } = require("../../../utils/generalUtil");
-
-const INVENTORY_UPDATE = "INVENTORY_UPDATE";
 
 const checkName = (name, str) => {
   var pattern = str
@@ -60,7 +55,7 @@ module.exports = {
 
         if (p) {
           return {
-            product: { ...p },
+            product: { ...p._doc, id: p._id },
             inStore: true,
           };
         } else {
@@ -160,8 +155,6 @@ module.exports = {
         };
       } else {
         delete product.id;
-
-        console.log(product);
 
         const p = new Product({
           ...product,

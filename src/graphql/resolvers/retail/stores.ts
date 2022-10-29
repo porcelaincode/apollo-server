@@ -152,6 +152,7 @@ module.exports = {
               $set: {
                 name: data.name,
                 contact: data.contact,
+                "meta.lastUpdated": new Date().toISOString(),
                 address: {
                   line: data.address.line1,
                   location: {
@@ -290,6 +291,17 @@ module.exports = {
           }
         );
 
+        await Store.updateOne(
+          {
+            _id: bson.ObjectId(loggedUser.id),
+          },
+          {
+            $set: {
+              "meta.lastUpdated": new Date().toISOString(),
+            },
+          }
+        );
+
         pubsub.publish(INVENTORY_UPDATE, {
           inventoryUpdate: {
             ...inventory._doc,
@@ -302,7 +314,6 @@ module.exports = {
         });
 
         return updated.modifiedCount ? true : false;
-        // return false;
       }
 
       throw new AuthenticationError("User cannot access this route.");

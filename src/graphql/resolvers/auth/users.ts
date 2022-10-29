@@ -1,3 +1,4 @@
+import { cleanupAddresses } from "../../../functions/users";
 import {
   ContactProps,
   EditProfileProps,
@@ -8,6 +9,8 @@ import {
 const Geohash = require("../../../geohash");
 
 const mongoose = require("mongoose");
+const bson = require("bson");
+
 const { withFilter } = require("graphql-subscriptions");
 const {
   UserInputError,
@@ -58,6 +61,8 @@ module.exports = {
       const data = {
         store: {
           id: null,
+          storeName: "",
+          lastUpdated: "",
           available: false,
         },
         products: [],
@@ -78,9 +83,15 @@ module.exports = {
 
           var inventory = await Inventory.findOne({ "meta.storeId": store.id });
 
-          data.products = randomizeArray([...inventory.products], 10);
+          if (inventory) {
+            //should'nt ever need to check this
+            data.products = randomizeArray([...inventory.products], 10);
+          }
+
           data.store.available = !store.meta.closed;
           data.store.id = store.id;
+          data.store.storeName = store.name;
+          data.store.lastUpdated = store.meta.lastUpdated;
         }
       }
 
@@ -417,10 +428,13 @@ module.exports = {
 
       const res = await User.findById(loggedUser.id);
 
+      const deliveryAddresses = cleanupAddresses(res.deliveryAddresses);
+
       pubsub.publish(USER_UPDATE, {
         userUpdate: {
           ...res._doc,
           id: res._id,
+          deliveryAddresses,
         },
       });
 
@@ -436,26 +450,28 @@ module.exports = {
       const i = deliveryAddresses.findIndex((e) => e._id.toString() === id);
 
       if (i <= -1) {
+        return false;
+      } else {
         deliveryAddresses.splice(i, 1);
 
         const user_ = await User.updateOne(
-          { _id: loggedUser.id },
+          { _id: bson.ObjectId(loggedUser.id) },
           {
             deliveryAddresses,
           }
         );
 
+        const addresses = cleanupAddresses(deliveryAddresses);
+
         pubsub.publish(USER_UPDATE, {
           userUpdate: {
             ...user._doc,
             id: user._id,
-            deliveryAddresses,
+            deliveryAddresses: addresses,
           },
         });
 
         return user_.modifiedCount ? true : false;
-      } else {
-        return false;
       }
     },
     async editProfile(
@@ -477,12 +493,15 @@ module.exports = {
         }
       );
 
+      const res = await User.findById(loggedUser.id);
+
+      const deliveryAddresses = cleanupAddresses(res.deliveryAddresses);
+
       pubsub.publish(USER_UPDATE, {
         userUpdate: {
-          ...user_._doc,
-          id: user_._id,
-          name: userInfoInput.name,
-          contact: userInfoInput.contact,
+          ...res._doc,
+          id: res._id,
+          deliveryAddresses,
         },
       });
 
