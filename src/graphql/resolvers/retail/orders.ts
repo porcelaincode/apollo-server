@@ -1,6 +1,12 @@
 import { withFilter } from "graphql-subscriptions";
 import { updateInventory } from "../../../functions/inventories";
-import { ContactProps, CreateOrderProps, OrderProps } from "../../../props";
+import {
+  ContactProps,
+  CreateOrderProps,
+  OrderProductProps,
+  OrderProps,
+  ProductProps,
+} from "../../../props";
 
 const mongoose = require("mongoose");
 const bson = require("bson");
@@ -118,26 +124,26 @@ module.exports = {
       const data = { ...orderInfo };
 
       let address: StoreLocationProps;
-      const products = [];
+      const products: Array<ProductProps> = [];
       let grandAmount = 0;
 
-      await asyncForEach(data.products, async (item) => {
-        if (item.inStore) {
-        } else {
-          const p = await Product.findById(item.id);
+      // await asyncForEach(data.products, async (item) => {
+      // if (item.inStore) {
+      // } else {
+      //   const p = await Product.findById(item.id);
 
-          if (p) {
-            products.push({
-              brand: p.brand,
-              name: p.name,
-              url: p.url,
-              price: p.price,
-              quantity: item.quantity,
-              totalAmount: (item.quantity * parseFloat(p.price.mrp)).toString(),
-            });
-          }
-        }
+      //   if (p) {
+      data.products.forEach((item) => {
+        products.push({
+          ...item,
+          totalAmount: (
+            item.quantity.units * parseFloat(item.price.mrp)
+          ).toString(),
+        });
       });
+      // }
+      // }
+      // });
 
       products.forEach((e) => {
         grandAmount += parseFloat(e.totalAmount);
@@ -169,6 +175,11 @@ module.exports = {
           ...orderData,
           state: {
             ...orderData.state,
+            delivery: {
+              ...orderData.state.delivery,
+              delivered: true,
+              deliveredAt: new Date().toISOString(),
+            },
             created: {
               date: new Date().toISOString(),
               message: "Registered In Store order.",
@@ -178,10 +189,10 @@ module.exports = {
               date: new Date().toISOString(),
             },
             payment: {
-              paid: data.accountId ? false : true,
-              paidAt: data.accountId ? null : new Date().toISOString(),
+              paid: true,
+              paidAt: new Date().toISOString(),
               method: data.method,
-              grandAmount: grandAmount,
+              grandAmount: data.grandTotal,
             },
           },
         });
@@ -221,7 +232,6 @@ module.exports = {
             },
             delivery: {
               ...orderData.state.delivery,
-
               address: data.delivery
                 ? {
                     line: address.line1,

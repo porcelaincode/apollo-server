@@ -117,14 +117,8 @@ export interface OrderProductProps {
   totalAmount: string;
 }
 
-export interface OrderProductInputProps {
-  id: string;
-  quantity: number;
-  inStore: boolean;
-}
-
 export interface CreateOrderProps {
-  products: Array<OrderProductInputProps>;
+  products: Array<ProductProps>;
   grandTotal?: string;
   addressId: string;
   storeId: string;
@@ -157,7 +151,7 @@ export interface ProductProps {
     mrp: string;
     sale: string;
   };
-  itemQuantity?: string;
+  totalAmount?: string;
 }
 
 export interface SearchProductProps {
@@ -197,6 +191,7 @@ export interface StoreAccountProps {
 
 export interface StoreInfoProps {
   name: string;
+  licenseNumber: string;
   contact: ContactProps;
   address: StoreLocationProps;
   accounts: Array<StoreAccountProps>;

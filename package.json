@@ -35,6 +35,7 @@
     "@types/node": "^18.7.13",
     "apollo-server-core": "^3.4.0",
     "apollo-server-express": "^3.10.1",
+    "bcryptjs": "^2.4.3",
     "bson": "^4.7.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",

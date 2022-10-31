@@ -37,6 +37,7 @@ module.exports = gql`
     amount: String
   }
   type StoreMeta {
+    licenseHash: String
     verified: Boolean
     closed: Boolean
     lastUpdated: String
@@ -65,8 +66,10 @@ module.exports = gql`
     line1: String
     location: LocationInput
   }
+
   input StoreInfo {
     name: String
+    licenseNumber: String
     contact: ContactInput
     address: StoreAddressInput
   }

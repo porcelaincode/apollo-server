@@ -18,6 +18,10 @@ export const pointSchema = new mongoose.Schema(
 
 const orderProductSchema = new mongoose.Schema(
   {
+    id: {
+      type: String,
+      required: true,
+    },
     brand: {
       type: String,
     },

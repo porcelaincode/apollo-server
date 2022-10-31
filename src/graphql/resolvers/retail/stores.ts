@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const bson = require("bson");
 
 import { UserInputError, ValidationError } from "apollo-server-express";
-import e = require("express");
+const bcrypt = require("bcryptjs");
 import { withFilter } from "graphql-subscriptions";
 
 import { ContactProps, ProductProps, StoreInfoProps } from "../../../props";
@@ -132,13 +132,17 @@ module.exports = {
       { edit, storeInfo }: { edit: boolean; storeInfo: StoreInfoProps },
       req
     ) {
-      const data = { ...storeInfo };
+      let data: StoreInfoProps = { ...storeInfo };
 
       const geohash = Geohash.encode(
         Number(data.address.location.coordinates[0]),
         Number(data.address.location.coordinates[1]),
         9
       );
+
+      let licenseHash: string = await bcrypt.hash(data.licenseNumber, 12);
+
+      delete data.licenseNumber;
 
       try {
         if (edit) {
@@ -153,6 +157,7 @@ module.exports = {
                 name: data.name,
                 contact: data.contact,
                 "meta.lastUpdated": new Date().toISOString(),
+                "meta.licenseHash": licenseHash,
                 address: {
                   line: data.address.line1,
                   location: {
@@ -195,6 +200,10 @@ module.exports = {
 
           const newStore = new Store({
             ...data,
+            meta: {
+              lastUpdated: new Date().toISOString(),
+              licenseHash,
+            },
             address: {
               line: data.address.line1,
               location: {
@@ -254,11 +263,11 @@ module.exports = {
 
           const p = await Product.findById(product.id);
 
-          if (inArray >= -1) {
+          if (inArray > -1) {
             inventoryProducts.splice(inArray, 1);
           }
 
-          if (product.barcode && p.barcode.trim().length === 0) {
+          if (product.barcode && p.barcode.trim().length !== 0) {
             await Product.updateOne(
               { _id: bson.ObjectId(product.id) },
               {

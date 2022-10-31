@@ -20,7 +20,7 @@ export async function updateInventory(products, storeId) {
 
     if (i <= -1) {
       const p = await Product.findById(product.id);
-      newProducts.push(p);
+      newProducts.push({ ...p._doc, id: p._id.toString() });
     }
   });
 

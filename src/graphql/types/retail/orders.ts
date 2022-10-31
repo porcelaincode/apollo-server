@@ -66,7 +66,10 @@ module.exports = gql`
   }
   input OrderInputProduct {
     id: String!
-    quantity: Int!
+    name: String
+    quantity: QuantityInput
+    price: PriceInput
+    url: String
     inStore: Boolean!
   }
   input OrderInfo {
