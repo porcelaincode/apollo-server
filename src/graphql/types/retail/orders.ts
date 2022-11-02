@@ -46,12 +46,18 @@ module.exports = gql`
     userId: String!
     storeId: String!
   }
+  type OrderQuantityType {
+    units: Int!
+    count: String
+    type: String
+  }
   type OrderProduct {
+    id: String!
     brand: String
     name: String!
     url: String
     price: PriceType
-    quantity: Int!
+    quantity: OrderQuantityType
     totalAmount: String
   }
   type DeliveryTimes {
@@ -66,11 +72,12 @@ module.exports = gql`
   }
   input OrderInputProduct {
     id: String!
+    barcode: String
     name: String
     quantity: QuantityInput
+    totalAmount: String
     price: PriceInput
     url: String
-    inStore: Boolean!
   }
   input OrderInfo {
     products: [OrderInputProduct]

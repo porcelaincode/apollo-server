@@ -13,16 +13,13 @@ const bson = require("bson");
 
 const Order = mongoose.model.Order || require("../../../models/Order");
 const User = mongoose.model.User || require("../../../models/User");
-const Product = mongoose.model.Product || require("../../../models/Product");
 const Store = mongoose.model.Store || require("../../../models/Store");
 
 const checkAuth = require("../../../utils/checkAuth");
 
-const { asyncForEach } = require("../../../utils/generalUtil");
 const { findNearbyStores } = require("../../../brain");
 const { calcCrow } = require("../../../brain");
 const pubsub = require("../../../pubsub");
-const Geohash = require("../../../geohash");
 
 const ORDER_UPDATE = "ORDER_UPDATE";
 const ACCOUNT_UPDATE = "ACCOUNTS_UPDATE";
@@ -124,26 +121,8 @@ module.exports = {
       const data = { ...orderInfo };
 
       let address: StoreLocationProps;
-      const products: Array<ProductProps> = [];
+      const products: Array<ProductProps> = data.products;
       let grandAmount = 0;
-
-      // await asyncForEach(data.products, async (item) => {
-      // if (item.inStore) {
-      // } else {
-      //   const p = await Product.findById(item.id);
-
-      //   if (p) {
-      data.products.forEach((item) => {
-        products.push({
-          ...item,
-          totalAmount: (
-            item.quantity.units * parseFloat(item.price.mrp)
-          ).toString(),
-        });
-      });
-      // }
-      // }
-      // });
 
       products.forEach((e) => {
         grandAmount += parseFloat(e.totalAmount);

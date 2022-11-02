@@ -157,20 +157,18 @@ module.exports = {
                 name: data.name,
                 contact: data.contact,
                 "meta.lastUpdated": new Date().toISOString(),
-                "meta.licenseHash": licenseHash,
-                address: {
-                  line: data.address.line1,
-                  location: {
-                    hash: geohash,
-                    coordinates: data.address.location.coordinates,
-                  },
-                },
+                "meta.licenseHash": licenseHash.toString(),
+                "address.line": data.address.line1,
+                "address.location.hash": geohash,
+                "address.location.coordinates":
+                  data.address.location.coordinates,
               },
             }
           );
 
+          const res = await Store.findById(loggedUser.id);
+
           if (storeUpdate.modifiedCount) {
-            const res = await Store.findById(loggedUser.id);
             pubsub.publish(STORE_UPDATE, {
               storeUpdate: {
                 ...res._doc,

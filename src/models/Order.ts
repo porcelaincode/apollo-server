@@ -42,8 +42,17 @@ const orderProductSchema = new mongoose.Schema(
       },
     },
     quantity: {
-      type: Number,
-      required: true,
+      units: {
+        type: String,
+        required: true,
+        default: 1,
+      },
+      count: {
+        type: String,
+      },
+      type: {
+        type: String,
+      },
     },
     totalAmount: {
       type: String,
