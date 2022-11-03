@@ -600,6 +600,42 @@ module.exports = {
         throw new Error("You're not near delivery location");
       }
     },
+    async paymentStatus(
+      _,
+      { id, method }: { id: string; method: string },
+      req
+    ) {
+      const { loggedUser, source } = checkAuth(req);
+
+      if (source.startsWith("locale-store")) {
+        const orderUpdate = await Order.updateOne(
+          {
+            _id: bson.ObjectId(id),
+            "meta.storeId": loggedUser.id,
+          },
+          {
+            "state.payment.paid": true,
+            "state.payment.method": method,
+            "state.payment.paidAt": new Date().toISOString(),
+          }
+        );
+
+        const orderToUpdate = await Order.findById(id);
+
+        pubsub.publish(ORDER_UPDATE, {
+          orderUpdate: {
+            ...orderToUpdate._doc,
+            id: orderToUpdate._id,
+          },
+        });
+
+        return orderUpdate.modifiedCount ? true : false;
+      } else if (source.startsWith("locale-user")) {
+        throw new AuthenticationError("User cannot change payment status");
+      }
+
+      return false;
+    },
   },
   Subscriptions: {
     orderUpdate: {
