@@ -105,6 +105,12 @@ module.exports = gql`
     dispatchOrder(id: String!): Boolean!
     deliverOrder(id: String!, coordinates: [String]!): Boolean!
     paymentStatus(id: String!, method: String!): Boolean!
+    updateAccount(
+      id: String!
+      accountId: String!
+      paid: Boolean
+      method: String
+    ): StoreAccount!
   }
   type Subscription {
     orderUpdate(id: String!): Order!

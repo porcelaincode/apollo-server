@@ -55,7 +55,7 @@ module.exports = {
 
         if (p) {
           return {
-            product: { ...p._doc, id: p._id },
+            product: p,
             inStore: true,
           };
         } else {
@@ -96,11 +96,17 @@ module.exports = {
       }).limit(limit ? limit : 10000);
 
       if (products) {
-        console.log(`${loggedUser.id} looked up ${name} in Store ${storeId}`);
+        console.log(
+          `${loggedUser.id} looked up ${name} in Store${
+            storeId ? " " + storeId : ""
+          }`
+        );
         return products;
       } else {
         console.log(
-          `${loggedUser.id} couldn't find ${name} in Store ${storeId}`
+          `${loggedUser.id} couldn't find ${name} in Store${
+            storeId ? " " + storeId : ""
+          }`
         );
         throw new UserInputError("No Products not found");
       }
@@ -139,8 +145,6 @@ module.exports = {
 
       if (product.id) {
         const p = await Product.findById(product.id);
-
-        delete product.id;
 
         await Product.updateOne(
           { _id: bson.ObjectId(product.id) },

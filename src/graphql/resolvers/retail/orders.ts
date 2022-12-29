@@ -19,6 +19,8 @@ const checkAuth = require("../../../utils/checkAuth");
 
 const { findNearbyStores } = require("../../../brain");
 const { calcCrow } = require("../../../brain");
+const { asyncForEach } = require("../../../utils/generalUtil");
+
 const pubsub = require("../../../pubsub");
 
 const ORDER_UPDATE = "ORDER_UPDATE";
@@ -629,12 +631,182 @@ module.exports = {
           },
         });
 
+        // update account
+        if (orderToUpdate.linkedAccount) {
+          const store = await Store.findById(loggedUser.id);
+
+          const accounts = [...store.accounts];
+
+          let i = accounts.findIndex(
+            (a) => a.id === orderToUpdate.linkedAccount
+          );
+
+          let account = accounts[i];
+
+          // find and update order
+          let orders = account.orders;
+          let m = orders.findIndex(
+            (o) => o.orderId === orderToUpdate._id.toString()
+          );
+          orders[m].paid = true;
+          orders[m].date = new Date().toISOString();
+
+          accounts.splice(i, 1);
+
+          const updatedAccounts = [...accounts].concat(account);
+
+          await Store.updateOne(
+            { _id: orderToUpdate._id },
+            {
+              $set: {
+                accounts: updatedAccounts,
+              },
+            }
+          );
+        }
+
         return orderUpdate.modifiedCount ? true : false;
       } else if (source.startsWith("locale-user")) {
         throw new AuthenticationError("User cannot change payment status");
       }
 
       return false;
+    },
+    async updateAccount(
+      _,
+      {
+        orderId,
+        accountId,
+        paid,
+        method,
+      }: { orderId: string; accountId: string; paid: boolean; method: string },
+      req
+    ) {
+      const { loggedUser, source } = checkAuth(req);
+
+      if (source.startsWith("locale-store")) {
+        const order = await Order.findById(orderId);
+        const store = await Store.findById(loggedUser.id);
+
+        let date = new Date().toISOString();
+
+        await Order.updateOne(
+          { _id: bson.ObjectId(order._id) },
+          {
+            $set: {
+              linkedAccount: accountId,
+            },
+          }
+        );
+
+        let accounts = [...store.accounts];
+
+        let i = accounts.findIndex((account) => account.id === accountId);
+
+        if (i <= -1) {
+          // push new account into array
+          const user = await User.findById(order.meta.userId);
+
+          const account = {
+            id: user._id.toString(),
+            name: user.name,
+            lastUpdated: new Date().toISOString(),
+            closed: false,
+            orders: [
+              {
+                orderId: order._id,
+                paid: false,
+                date,
+                amount: order.state.payment.grandAmount,
+              },
+            ],
+            pending: {
+              status: true,
+              amount: order.state.payment.grandAmount,
+            },
+          };
+
+          const newAccounts = [...accounts].concat(account);
+
+          let storeUpdate = await Store.updateOne(
+            { _id: bson.ObjectId(loggedUser.id) },
+            {
+              $set: {
+                accounts: newAccounts,
+              },
+            }
+          );
+
+          if (storeUpdate.modifiedCount) {
+            return account;
+          } else {
+            throw new Error(
+              "Facing error processing account request. Try again in some time."
+            );
+          }
+        } else {
+          // update account
+          let newAccount = accounts[i];
+
+          if (paid) {
+            let orders = newAccount.orders.filter((a) => a.paid === false);
+
+            await asyncForEach(orders, async (order) => {
+              await Order.updateOne(
+                {
+                  _id: bson.ObjectId(order.orderId),
+                },
+                {
+                  "state.payment.paid": true,
+                  "state.payment.method": method,
+                  "state.payment.paidAt": date,
+                }
+              );
+            });
+          }
+
+          let orders = [...newAccount.orders].concat({
+            orderId: order._id,
+            paid: false,
+            date,
+            amount: order.state.payment.grandAmount,
+          });
+
+          accounts.splice(i, 1);
+
+          let updatedAccount = {
+            ...newAccount,
+            lastUpdated: date,
+            closed: false,
+            orders,
+            pending: {
+              status: true,
+              amount: order.state.payment.grandAmount,
+            },
+          };
+
+          const newAccounts = [...accounts].concat(updatedAccount);
+
+          let storeUpdate = await Store.updateOne(
+            { _id: bson.ObjectId(loggedUser.id) },
+            {
+              $set: {
+                accounts: newAccounts,
+              },
+            }
+          );
+
+          if (storeUpdate.modifiedCount) {
+            return updatedAccount;
+          } else {
+            throw new Error(
+              "Facing error processing account request. Try again in some time."
+            );
+          }
+        }
+      } else {
+        throw new AuthenticationError("User cannot access this route.");
+      }
     },
   },
   Subscriptions: {
