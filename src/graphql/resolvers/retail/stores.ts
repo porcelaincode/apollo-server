@@ -283,6 +283,7 @@ module.exports = {
           inventoryProducts.push({
             ...p._doc,
             ...product,
+            lastUpdated: new Date().toISOString(),
           });
         });
 

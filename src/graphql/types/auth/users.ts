@@ -31,7 +31,8 @@ module.exports = gql`
   }
   type Feed {
     store: FeedStore
-    products: [InventoryProduct]
+    alikeProducts: [InventoryProduct]
+    recentProducts: [OrderProduct]
   }
   type FeedStore {
     id: String

@@ -28,6 +28,7 @@ const Inventory =
   mongoose.model.Inventory || require("../../../models/Inventory");
 
 const checkAuth = require("../../../utils/checkAuth");
+const { getFeedProducts } = require("../../../functions/inventories");
 const {
   generateOTP,
   generateRefreshToken,
@@ -65,7 +66,8 @@ module.exports = {
           lastUpdated: "",
           available: false,
         },
-        products: [],
+        alikeProducts: [],
+        recentProducts: [],
         distance: "",
       };
 
@@ -81,15 +83,17 @@ module.exports = {
         if (nearbyStores[0]) {
           const store = await Store.findById(nearbyStores[0]);
 
-          var inventory = await Inventory.findOne({ "meta.storeId": store.id });
-
-          if (inventory) {
-            //should'nt ever need to check this
-            data.products = randomizeArray([...inventory.products], 10);
-          }
-
           data.store.available = !store.meta.closed;
           data.store.id = store.id;
+
+          let { recentProducts, alikeProducts } = await getFeedProducts(
+            loggedUser.id,
+            store.id
+          );
+
+          data.alikeProducts = alikeProducts;
+          data.recentProducts = recentProducts;
+
           data.store.storeName = store.name;
           data.store.lastUpdated = store.meta.lastUpdated;
         }
