@@ -127,6 +127,21 @@ module.exports = {
         };
       }
 
+      if (contact.number === process.env.GOOGLE_PLAY_TEST_NUMBER) {
+        client
+          .set(contact.number, process.env.GOOGLE_PLAY_TEST_CODE)
+          .then((res: any) => {
+            if (res) {
+              client.expire(contact.number, 1.5 * 60);
+            }
+          });
+        return {
+          date: addMinutesToDate(Date.now(), 1),
+          error: false,
+          message: "",
+        };
+      }
+
       var user = null;
 
       if (source.startsWith("locale-store")) {
