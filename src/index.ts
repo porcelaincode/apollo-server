@@ -9,6 +9,7 @@ const {
   ApolloServerPluginDrainHttpServer,
   ApolloServerPluginLandingPageLocalDefault,
 } = require("apollo-server-core");
+const { InMemoryLRUCache } = require("@apollo/utils.keyvaluecache");
 const { makeExecutableSchema } = require("@graphql-tools/schema");
 const { WebSocketServer } = require("ws");
 const { useServer } = require("graphql-ws/lib/use/ws");
@@ -53,10 +54,16 @@ export async function startApolloServer() {
   // Set up ApolloServer.
   const server = new ApolloServer({
     schema,
-
+    cache: new InMemoryLRUCache({
+      // ~100MiB
+      maxSize: Math.pow(2, 20) * 100,
+      // 5 minutes (in milliseconds)
+      ttl: 300_000,
+    }),
     context: ({ req }: any) => ({ req }),
     plugins: [
       // Proper shutdown for the HTTP server.
+
       ApolloServerPluginDrainHttpServer({ httpServer }),
       // Proper shutdown for the WebSocket server.
       {

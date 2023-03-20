@@ -127,28 +127,42 @@ module.exports = {
         };
       }
 
-      if (contact.number === process.env.GOOGLE_PLAY_TEST_NUMBER) {
-        client
-          .set(contact.number, process.env.GOOGLE_PLAY_TEST_CODE)
-          .then((res: any) => {
-            if (res) {
-              client.expire(contact.number, 1.5 * 60);
-            }
-          });
-        return {
-          date: addMinutesToDate(Date.now(), 1),
-          error: false,
-          message: "",
-        };
-      }
-
       var user = null;
 
       if (source.startsWith("locale-store")) {
+        // find better test function
+        if (contact.number === process.env.GOOGLE_PLAY_STORE_TEST_NUMBER) {
+          client
+            .set(contact.number, process.env.GOOGLE_PLAY_STORE_TEST_CODE)
+            .then((res: any) => {
+              if (res) {
+                client.expire(contact.number, 1.5 * 60);
+              }
+            });
+          return {
+            date: addMinutesToDate(Date.now(), 1),
+            error: false,
+            message: "",
+          };
+        }
         user = await Store.findOne({
           "contact.number": contact.number,
         });
       } else {
+        if (contact.number === process.env.GOOGLE_PLAY_USER_TEST_NUMBER) {
+          client
+            .set(contact.number, process.env.GOOGLE_PLAY_USER_TEST_CODE)
+            .then((res: any) => {
+              if (res) {
+                client.expire(contact.number, 1.5 * 60);
+              }
+            });
+          return {
+            date: addMinutesToDate(Date.now(), 1),
+            error: false,
+            message: "",
+          };
+        }
         user = await User.findOne({
           "contact.number": contact.number,
         });
