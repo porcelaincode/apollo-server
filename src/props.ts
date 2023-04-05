@@ -122,6 +122,7 @@ export interface CreateOrderProps {
   grandTotal?: string;
   addressId: string;
   storeId: string;
+  paymentId?: string;
   delivery: boolean;
   deliverBy: string;
   accountId?: string;
@@ -137,6 +138,7 @@ export interface TwilioMessageProps {
 // product props
 
 export interface ProductProps {
+  _doc?: ProductProps;
   id: string;
   name: string;
   brand: string;
@@ -192,6 +194,7 @@ export interface StoreAccountProps {
 export interface StoreInfoProps {
   name: string;
   licenseNumber: string;
+  upi?: String;
   contact: ContactProps;
   address: StoreLocationProps;
   accounts: Array<StoreAccountProps>;

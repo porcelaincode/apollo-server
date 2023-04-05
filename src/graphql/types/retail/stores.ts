@@ -7,10 +7,16 @@ module.exports = gql`
     stat: StoreStat
     contact: ContactType!
     meta: StoreMeta
+    upi: Upi
     address: StoreAddress
     accounts: [StoreAccount]
     token: String
     refreshToken: String
+  }
+  type Upi {
+    value: String
+    display: String
+    lastUpdated: String
   }
   type StoreStat {
     amount: String
@@ -66,14 +72,13 @@ module.exports = gql`
     line1: String
     location: LocationInput
   }
-
   input StoreInfo {
     name: String
+    upi: String
     licenseNumber: String
     contact: ContactInput
     address: StoreAddressInput
   }
-
   input ProductInput {
     id: String!
     price: String

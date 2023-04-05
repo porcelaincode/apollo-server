@@ -1,7 +1,11 @@
 const mongoose = require("mongoose");
 const bson = require("bson");
 
-import { UserInputError, ValidationError } from "apollo-server-express";
+import {
+  UserInputError,
+  ValidationError,
+  AuthenticationError,
+} from "apollo-server-express";
 const bcrypt = require("bcryptjs");
 import { withFilter } from "graphql-subscriptions";
 
@@ -14,6 +18,7 @@ const Inventory =
   mongoose.model.Inventory || require("../../../models/Inventory");
 
 const checkAuth = require("../../../utils/checkAuth");
+const { encodeUpi } = require("../../../utils/upi");
 const { asyncForEach } = require("../../../utils/generalUtil");
 const Geohash = require("../../../geohash");
 const pubsub = require("../../../pubsub");
@@ -150,12 +155,22 @@ module.exports = {
 
           console.log(`Store ${loggedUser.id} changing details.`);
 
+          let enUpi;
+          if (data.upi) {
+            enUpi = encodeUpi(data.upi);
+          }
+
           const storeUpdate = await Store.updateOne(
             { _id: bson.ObjectId(loggedUser.id) },
             {
               $set: {
                 name: data.name,
                 contact: data.contact,
+                upi: {
+                  value: enUpi ? enUpi.value : "",
+                  display: enUpi ? enUpi.display : "Not Available",
+                  lastUpdated: new Date().toISOString(),
+                },
                 "meta.lastUpdated": new Date().toISOString(),
                 "meta.licenseHash": licenseHash.toString(),
                 "address.line": data.address.line1,
@@ -166,7 +181,7 @@ module.exports = {
             }
           );
 
-          const res = await Store.findById(loggedUser.id);
+          var res = await Store.findById(loggedUser.id);
 
           if (storeUpdate.modifiedCount) {
             pubsub.publish(STORE_UPDATE, {
@@ -196,11 +211,17 @@ module.exports = {
             });
           }
 
+          let enUpi = encodeUpi(data.upi);
+
           const newStore = new Store({
             ...data,
             meta: {
               lastUpdated: new Date().toISOString(),
               licenseHash,
+            },
+            upi: {
+              ...enUpi,
+              lastUpdated: new Date().toISOString(),
             },
             address: {
               line: data.address.line1,

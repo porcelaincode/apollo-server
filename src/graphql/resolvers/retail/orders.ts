@@ -11,6 +11,8 @@ import {
 const mongoose = require("mongoose");
 const bson = require("bson");
 
+const { AuthenticationError } = require("apollo-server-express");
+
 const Order = mongoose.model.Order || require("../../../models/Order");
 const User = mongoose.model.User || require("../../../models/User");
 const Store = mongoose.model.Store || require("../../../models/Store");
@@ -139,6 +141,13 @@ module.exports = {
         },
         state: {
           method: data.method,
+          payment: {
+            paid: data.paymentId ? true : false,
+            paymentId: data.paymentId || "",
+            paidAt: new Date().toISOString(),
+            method: data.method,
+            grandAmount,
+          },
           delivery: {
             toDeliver: data.delivery,
             address: null,

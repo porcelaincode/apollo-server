@@ -114,6 +114,17 @@ const storeSchema = new mongoose.Schema({
       type: String,
     },
   },
+  upi: {
+    value: {
+      type: String,
+    },
+    display: {
+      type: String,
+    },
+    lastUpdated: {
+      type: String,
+    },
+  },
   address: {
     line: {
       type: String,

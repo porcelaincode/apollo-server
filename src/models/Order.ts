@@ -148,6 +148,9 @@ const orderSchema = new mongoose.Schema({
       paid: {
         type: Boolean,
       },
+      paymentId: {
+        type: String,
+      },
       grandAmount: {
         type: String,
         required: true,

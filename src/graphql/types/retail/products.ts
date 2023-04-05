@@ -14,6 +14,7 @@ module.exports = gql`
     inStore: Boolean
   }
   type QuantityType {
+    units: Int
     count: String!
     type: String!
   }
@@ -21,7 +22,6 @@ module.exports = gql`
     mrp: String!
     discount: String
   }
-
   type Inventory {
     id: ID!
     meta: InventoryMeta
@@ -35,14 +35,9 @@ module.exports = gql`
     id: String
     url: String
     name: String
-    quantity: InventoryQuantityType
+    quantity: QuantityType
     price: PriceType
     barcode: String
-  }
-  type InventoryQuantityType {
-    units: Int!
-    count: String!
-    type: String!
   }
   type GetProduct {
     product: Product

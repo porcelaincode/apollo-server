@@ -39,6 +39,7 @@ module.exports = gql`
   type OrderPaymentType {
     method: String
     paid: Boolean
+    paymentId: String
     grandAmount: String!
     paidAt: String
   }
@@ -84,6 +85,7 @@ module.exports = gql`
     grandTotal: String
     addressId: String
     storeId: String!
+    paymentId: String
     delivery: Boolean!
     deliverBy: String
     accountId: String
@@ -93,6 +95,7 @@ module.exports = gql`
     getOrder(id: String!): Order!
     getOrders(limit: Int!, offset: Int!): [Order]!
     getDeliveryTimes: [DeliveryTimes]
+    getPaymentId: String!
   }
   type Mutation {
     createOrder(orderInfo: OrderInfo): Order!

@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const bson = require("bson");
+const { AuthenticationError } = require("apollo-server-express");
 
 import { UserInputError } from "apollo-server-express";
 import { ProductProps } from "../../../props";
@@ -101,6 +102,28 @@ module.exports = {
             storeId ? " " + storeId : ""
           }`
         );
+
+        if (source.startsWith("locale-store")) {
+          const inventory = await Inventory.findOne({
+            "meta.storeId": loggedUser.id,
+          });
+
+          products.forEach((p, index) => {
+            var i = inventory.products.findIndex((e) => e.id === p.id);
+            if (i > -1) {
+              var product = inventory._doc.products[i];
+              products[index] = {
+                ...p._doc,
+                id: p.id,
+                quantity: {
+                  ...product.quantity,
+                  units: product.quantity.units || 0,
+                },
+              };
+            }
+          });
+        }
+
         return products;
       } else {
         console.log(
