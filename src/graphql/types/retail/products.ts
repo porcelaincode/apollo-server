@@ -58,6 +58,7 @@ module.exports = gql`
     brand: String
     name: String
     quantity: QuantityInput
+    totalAmount: String
     price: PriceInput
     url: String
   }
