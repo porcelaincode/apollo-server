@@ -99,6 +99,7 @@ module.exports = gql`
     addAccount(contact: ContactInput!, orderId: String!): Boolean!
     editStore(edit: Boolean!, storeInfo: StoreInfo): Store!
     addToInventory(products: [ProductToInventoryInput]): Boolean!
+    verifyStore(storeId: String!, verified: Boolean!): Boolean!
   }
   type Subscription {
     storeUpdate(id: String!): Store!

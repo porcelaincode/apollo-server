@@ -77,6 +77,11 @@ module.exports = {
         "Product doesn't exist with us, register the new product."
       );
     },
+    async productRecommendations(_, { storeId }: { storeId: string }, req) {
+      var products = [];
+
+      return products;
+    },
     async getProducts(
       _: any,
       {

@@ -65,6 +65,7 @@ module.exports = gql`
 
   type Query {
     getInventory: Inventory!
+    productRecommendations(storeId: String): [Product]
     getProduct(storeId: String!, barcode: String!): GetProduct
     # FIXME: Two queries of same Type
     getProducts(name: String!, limit: Int!): [Product]

@@ -6,8 +6,8 @@ import {
   ValidationError,
   AuthenticationError,
 } from "apollo-server-express";
-const bcrypt = require("bcryptjs");
 import { withFilter } from "graphql-subscriptions";
+const bcrypt = require("bcryptjs");
 
 import { ContactProps, ProductProps, StoreInfoProps } from "../../../props";
 
@@ -346,6 +346,44 @@ module.exports = {
       }
 
       throw new AuthenticationError("User cannot access this route.");
+    },
+    async verifyStore(
+      _,
+      { storeId, verified }: { storeId: string; verified: boolean },
+      req
+    ) {
+      const { loggedUser } = checkAuth(req);
+
+      console.log(`User ${loggedUser.id} requesting confirmation for order.`);
+
+      /* checkforsuperuser 
+        const user = await User.findById(loggedUser.id)
+        if(user._doc.meta.isSuperuser){
+
+        } else{
+          throw new Error('User not permitted to access this route')
+        }
+      */
+
+      const storeUpdate = await Store.updateOne(
+        { _id: bson.ObjectId(storeId) },
+        {
+          "meta.verified": verified,
+          "meta.lastUpdated": new Date().toISOString(),
+        }
+      );
+
+      if (storeUpdate.modifiedCount) {
+        var res = await Store.findById(loggedUser.id);
+        pubsub.publish(STORE_UPDATE, {
+          storeUpdate: {
+            ...res._doc,
+            id: res._id,
+          },
+        });
+        return true;
+      }
+      return false;
     },
   },
   Subscriptions: {
