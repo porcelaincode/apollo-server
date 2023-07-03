@@ -1,77 +1,79 @@
-import { ProductProps, UserProps } from "../props";
+import jwt from 'jsonwebtoken';
+import { Document } from 'mongoose';
 
-const jwt = require("jsonwebtoken");
+import { IContactSchema, IProductSchema } from '../types';
 
 async function asyncForEach(array: any[], callback: any) {
-  for (let index = 0; index < array.length; index++) {
-    await callback(array[index], index, array);
-  }
+    for (let index = 0; index < array.length; index++) {
+        await callback(array[index], index, array);
+    }
 }
-module.exports.asyncForEach = asyncForEach;
 
 function log(str: string) {
-  if (process.env.NODE_ENV === "production") {
-    console.log(log);
-  }
+    if (process.env.NODE_ENV === 'production') {
+        console.log(str);
+    }
 }
-module.exports.log = log;
 
-function generate(n: number): string {
-  var add = 1,
-    max = 12 - add; // 12 is the min safe number Math.random() can generate without it starting to pad the end with zeros.
-  var data: string;
-  if (n > max) {
-    return generate(max) + generate(n - max);
-  }
+function generateOTP(n: number): string {
+    let add = 1,
+        max = 12 - add; // 12 is the min safe number Math.random() can generate without it starting to pad the end with zeros.
+    let data: string;
+    if (n > max) {
+        return generateOTP(max) + generateOTP(n - max);
+    }
 
-  max = Math.pow(10, n + add);
-  var min = max / 10; // Math.pow(10, n) basically
-  var number = Math.floor(Math.random() * (max - min + 1)) + min;
-  data = ("" + number).substring(add);
-  return data;
+    max = Math.pow(10, n + add);
+    const min = max / 10; // Math.pow(10, n) basically
+    const number = Math.floor(Math.random() * (max - min + 1)) + min;
+    data = ('' + number).substring(add);
+    return data;
 }
-module.exports.generateOTP = generate;
 
-function generateToken(user: UserProps) {
-  return jwt.sign(
-    {
-      id: user.id,
-      name: user.name,
-      contact: user.contact,
-    },
-    process.env.TOKEN_SECRET,
-    { expiresIn: "7d" }
-  );
+export interface IUserTokenSchema extends Document {
+    id?: string;
+    name?: string;
+    contact: IContactSchema;
 }
-module.exports.generateToken = generateToken;
 
-function generateRefreshToken(user: UserProps) {
-  return jwt.sign(
-    {
-      id: user.id,
-      contact: user.contact,
-    },
-    process.env.REFRESH_TOKEN_SECRET
-  );
+function generateToken(user: IUserTokenSchema) {
+    return jwt.sign(
+        {
+            id: user._id,
+            name: user.name,
+            contact: user.contact,
+        },
+        process.env.TOKEN_SECRET,
+        { expiresIn: '7d' },
+    );
 }
-module.exports.generateRefreshToken = generateRefreshToken;
+
+function generateRefreshToken(user: IUserTokenSchema) {
+    return jwt.sign(
+        {
+            id: user.id,
+            contact: user.contact,
+        },
+        process.env.REFRESH_TOKEN_SECRET,
+    );
+}
 
 function addMinutesToDate(objDate: number, intMinutes: number) {
-  var numberOfMlSeconds = objDate;
-  var addMlSeconds = intMinutes * 60000;
-  var newDateObj = new Date(numberOfMlSeconds + addMlSeconds).toISOString();
-  return newDateObj;
+    const numberOfMlSeconds = objDate;
+    const addMlSeconds = intMinutes * 60000;
+    const newDateObj = new Date(numberOfMlSeconds + addMlSeconds).toISOString();
+    return newDateObj;
 }
-module.exports.addMinutesToDate = addMinutesToDate;
 
-function randomizeArray(array: Array<ProductProps>, lim: number) {
-  let c = [...array];
-  let len = array.length;
+function randomizeArray(array: Array<IProductSchema>, lim: number) {
+    const c = [...array];
+    const len = array.length;
 
-  if (lim) {
-    c.slice(0, lim);
-  }
+    if (lim) {
+        c.slice(0, lim);
+    }
 
-  return c;
+    return c;
 }
-module.exports.randomizeArray = randomizeArray;
+
+export { log, asyncForEach, generateToken, generateOTP, generateRefreshToken, addMinutesToDate, randomizeArray };

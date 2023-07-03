@@ -1,27 +1,27 @@
 // auth
-const usersResolvers = require("./auth/users");
+import usersResolvers from './auth/users';
 
 // retail
-const storeResolvers = require("./retail/stores");
-const orderResolvers = require("./retail/orders");
-const productResolvers = require("./retail/products");
+import storeResolvers from './retail/stores';
+import orderResolvers from './retail/orders';
+import productResolvers from './retail/products';
 
-module.exports = {
-  Query: {
-    ...usersResolvers.Query,
-    ...orderResolvers.Query,
-    ...storeResolvers.Query,
-    ...productResolvers.Query,
-  },
-  Mutation: {
-    ...usersResolvers.Mutation,
-    ...orderResolvers.Mutation,
-    ...storeResolvers.Mutation,
-    ...productResolvers.Mutation,
-  },
-  Subscription: {
-    ...usersResolvers.Subscriptions,
-    ...orderResolvers.Subscriptions,
-    ...storeResolvers.Subscriptions,
-  },
+export default {
+    Query: {
+        ...usersResolvers.Query,
+        ...orderResolvers.Query,
+        ...storeResolvers.Query,
+        ...productResolvers.Query,
+    },
+    Mutation: {
+        ...usersResolvers.Mutation,
+        ...orderResolvers.Mutation,
+        ...storeResolvers.Mutation,
+        ...productResolvers.Mutation,
+    },
+    Subscription: {
+        ...usersResolvers.Subscriptions,
+        ...orderResolvers.Subscriptions,
+        ...storeResolvers.Subscriptions,
+    },
 };

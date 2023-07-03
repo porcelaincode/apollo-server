@@ -1,11 +1,14 @@
-const { RedisPubSub } = require("graphql-redis-subscriptions");
+import { RedisPubSub } from 'graphql-redis-subscriptions';
 
-require("dotenv").config();
+const host: string = process.env.REDIS_HOST;
+const port: number = parseInt(process.env.REDIS_PORT);
 
-module.exports = new RedisPubSub({
-  connection: {
-    host: process.env.REDIS_HOST,
-    port: process.env.REDIS_PORT,
-    retry_strategy: (options: any) => Math.max(options.attempt * 100, 3000),
-  },
+const pubsub = new RedisPubSub({
+    connection: {
+        host,
+        port,
+        retryStrategy: (options: any) => Math.max(options.attempt * 100, 3000),
+    },
 });
+
+export default pubsub;

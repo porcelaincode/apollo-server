@@ -1,47 +1,47 @@
-import mongoose from "mongoose";
+import { Schema, Document, model } from 'mongoose';
+import { IProductSchema } from '../types';
 
-mongoose.Promise = global.Promise;
+export interface IProduct extends IProductSchema, Document {}
 
-const productSchema = new mongoose.Schema({
-  brand: {
-    type: String,
-  },
-  name: {
-    type: String,
-    required: true,
-  },
-  url: {
-    type: String,
-  },
-  fetchUri: {
-    type: String,
-  },
-  quantity: {
-    count: {
-      type: String,
-      required: true,
+const productSchema = new Schema({
+    brand: {
+        type: String,
     },
-    type: {
-      type: String,
-      required: true,
+    name: {
+        type: String,
+        required: true,
     },
-  },
-  barcode: {
-    type: String,
-  },
-  price: {
-    mrp: {
-      type: String,
-      required: true,
+    url: {
+        type: String,
     },
-    discount: {
-      type: String,
+    fetchUri: {
+        type: String,
     },
-  },
-  ratings: {
-    type: [Number],
-  },
+    quantity: {
+        count: {
+            type: String,
+            required: true,
+        },
+        type: {
+            type: String,
+            required: true,
+        },
+    },
+    barcode: {
+        type: String,
+    },
+    price: {
+        mrp: {
+            type: String,
+            required: true,
+        },
+        discount: {
+            type: String,
+        },
+    },
+    ratings: {
+        type: [Number],
+    },
 });
 
-module.exports =
-  mongoose.models.Product || mongoose.model("Product", productSchema);
+export default model<IProduct>('Product', productSchema);

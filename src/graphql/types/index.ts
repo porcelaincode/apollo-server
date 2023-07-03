@@ -1,9 +1,9 @@
 // auth
-const userTypes = require("./auth/users");
+import userTypes from './auth/users';
 
 // retail
-const productTypes = require("./retail/products");
-const orderTypes = require("./retail/orders");
-const storeTypes = require("./retail/stores");
+import productTypes from './retail/products';
+import orderTypes from './retail/orders';
+import storeTypes from './retail/stores';
 
-module.exports = [userTypes, orderTypes, storeTypes, productTypes];
+export default [userTypes, orderTypes, storeTypes, productTypes];
