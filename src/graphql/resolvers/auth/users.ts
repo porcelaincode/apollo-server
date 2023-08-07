@@ -421,10 +421,10 @@ module.exports = {
         // const nearbyStores = findNearbyStores(geohash);
 
         user_ = await User.updateOne(
-          { _id: loggedUser.id, "deliveryAddresses._id": id },
+          { _id: loggedUser.id, "addressBook._id": id },
           {
             $set: {
-              "deliveryAddresses.$": {
+              "addressBook.$": {
                 ...addressInfo,
                 location: {
                   hash: geohash,
@@ -447,7 +447,7 @@ module.exports = {
           { _id: loggedUser.id },
           {
             $push: {
-              deliveryAddresses: {
+              addressBook: {
                 ...addressInfo,
                 location: {
                   hash: geohash,
@@ -461,13 +461,13 @@ module.exports = {
 
       const res = await User.findById(loggedUser.id);
 
-      const deliveryAddresses = cleanupAddresses(res.deliveryAddresses);
+      const addressBook = cleanupAddresses(res.addressBook);
 
       pubsub.publish(USER_UPDATE, {
         userUpdate: {
           ...res._doc,
           id: res._id,
-          deliveryAddresses,
+          addressBook,
         },
       });
 
@@ -478,29 +478,29 @@ module.exports = {
 
       const user = await User.findById(loggedUser.id);
 
-      const deliveryAddresses = [...user.deliveryAddresses];
+      const addressBook = [...user.addressBook];
 
-      const i = deliveryAddresses.findIndex((e) => e._id.toString() === id);
+      const i = addressBook.findIndex((e) => e._id.toString() === id);
 
       if (i <= -1) {
         return false;
       } else {
-        deliveryAddresses.splice(i, 1);
+        addressBook.splice(i, 1);
 
         const user_ = await User.updateOne(
-          { _id: bson.ObjectId(loggedUser.id) },
+          { _id: new ObjectId(loggedUser.id) },
           {
-            deliveryAddresses,
+            addressBook,
           }
         );
 
-        const addresses = cleanupAddresses(deliveryAddresses);
+        const addresses = cleanupAddresses(addressBook);
 
         pubsub.publish(USER_UPDATE, {
           userUpdate: {
             ...user._doc,
             id: user._id,
-            deliveryAddresses: addresses,
+            addressBook: addresses,
           },
         });
 
@@ -528,13 +528,13 @@ module.exports = {
 
       const res = await User.findById(loggedUser.id);
 
-      const deliveryAddresses = cleanupAddresses(res.deliveryAddresses);
+      const addressBook = cleanupAddresses(res.addressBook);
 
       pubsub.publish(USER_UPDATE, {
         userUpdate: {
           ...res._doc,
           id: res._id,
-          deliveryAddresses,
+          addressBook,
         },
       });
 

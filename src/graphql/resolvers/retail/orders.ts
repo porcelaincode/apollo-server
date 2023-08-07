@@ -208,7 +208,7 @@ module.exports = {
         if (data.delivery) {
           const u = await User.findById(loggedUser.id);
 
-          address = u.deliveryAddresses.find(
+          address = u.addressBook.find(
             (e) => e.id.toString() === data.addressId
           );
         }

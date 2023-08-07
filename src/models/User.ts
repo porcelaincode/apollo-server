@@ -59,7 +59,7 @@ const userSchema = new mongoose.Schema({
     type: contactSchema,
     required: true,
   },
-  deliveryAddresses: [deliverySchema],
+  addressBook: [deliverySchema],
   meta: {
     lastLogin: {
       type: String,
